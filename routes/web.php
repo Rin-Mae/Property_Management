@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\TORRequestController;
+use App\Http\Controllers\Admin\UserManagementController;
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -58,6 +59,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/processing', function () {
         return view('admin.processing-requests');
     })->name('admin.processing');
+    
+    // Admin user management
+    Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users');
 });
 
 // Redirect root to login or dashboard

@@ -24,17 +24,21 @@ class RegisterController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'student_id' => 'nullable|string|unique:users,student_id',
+            'student_id' => 'required|string|unique:users,student_id',
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
+            'first_name' => $validated['first_name'],
+            'middle_name' => $validated['middle_name'] ?? null,
+            'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'student_id' => $validated['student_id'] ?? null,
+            'student_id' => $validated['student_id'],
             'role' => 'student', // Default role for new registrations
         ]);
 

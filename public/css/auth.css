@@ -1,0 +1,228 @@
+/* ========== Authentication Pages Styles ========== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    background: linear-gradient(135deg, #00a516 0%, #007810 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* ========== Container ========== */
+.container {
+    background: rgb(255, 255, 255);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 750px;
+}
+
+h1, h2 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+/* ========== Form ========== */
+.form-row {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-row.two-columns {
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-row.three-columns {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+select:focus {
+    outline: none;
+    border-color: #00a516;
+    box-shadow: 0 0 0 3px rgba(0, 165, 22, 0.1);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #00a516;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 165, 22, 0.1);
+}
+
+/* ========== Error and Success Messages ========== */
+.error-message {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.success-message.show {
+    display: block;
+}
+
+.error-alert {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.error-alert.show {
+    display: block;
+}
+
+/* ========== Buttons ========== */
+button[type="submit"] {
+    width: 100%;
+    padding: 0.8rem;
+    background: #00a516;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    margin-top: 1rem;
+}
+
+button[type="submit"]:hover {
+    background: #007810;
+    transform: translateY(-2px);
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ========== Links and Footer ========== */
+.form-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.form-footer a {
+    color: #00a516;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.form-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ========== Form Layout for Multiple Columns ========== */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.form-row .form-group {
+    margin-bottom: 0;
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 480px) {
+    .container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    h1, h2 {
+        font-size: 1.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .form-row .form-group {
+        margin-bottom: 1rem;
+    }
+}

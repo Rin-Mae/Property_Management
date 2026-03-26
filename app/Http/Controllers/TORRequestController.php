@@ -24,6 +24,7 @@ class TORRequestController extends Controller
             'full_name' => 'required|string|max:255',
             'birthplace' => 'required|string|max:255',
             'birthdate' => 'required|date|before:today',
+            'permanent_address' => 'nullable|string|max:500',
             'student_id' => 'required|string|max:255|unique:tor_requests',
             'course' => 'required|string|max:255',
             'degree' => 'nullable|string|max:255',
@@ -57,9 +58,10 @@ class TORRequestController extends Controller
 
         // If admin, return all requests; otherwise return only user's requests
         if ($user->role === 'admin') {
-            $torRequests = TORRequest::orderByDesc('created_at')->get();
+            $torRequests = TORRequest::withoutTrashed()->orderByDesc('created_at')->get();
         } else {
             $torRequests = TORRequest::where('user_id', $user->id)
+                ->withoutTrashed()
                 ->orderByDesc('created_at')
                 ->get();
         }

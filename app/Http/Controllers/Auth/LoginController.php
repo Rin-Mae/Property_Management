@@ -29,8 +29,9 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        // Try to login with email or student_id
-        $user = User::where('email', $validated['email'])
+        // Try to login with email or student_id (exclude soft deleted users)
+        $user = User::withoutTrashed()
+            ->where('email', $validated['email'])
             ->orWhere('student_id', $validated['email'])
             ->first();
 

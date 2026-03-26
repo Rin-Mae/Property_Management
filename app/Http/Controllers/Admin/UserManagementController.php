@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -64,6 +65,14 @@ class UserManagementController extends Controller
             'role' => $validated['role'],
         ]);
 
+        // Log activity
+        ActivityLog::log(
+            'created',
+            'User created: ' . $validated['first_name'] . ' ' . $validated['last_name'],
+            'User',
+            $user->id
+        );
+
         return response()->json([
             'message' => 'User created successfully',
             'user' => $user,
@@ -98,6 +107,14 @@ class UserManagementController extends Controller
 
         $user->save();
 
+        // Log activity
+        ActivityLog::log(
+            'updated',
+            'User updated: ' . $validated['first_name'] . ' ' . $validated['last_name'],
+            'User',
+            $user->id
+        );
+
         return response()->json([
             'message' => 'User updated successfully',
             'user' => $user,
@@ -116,7 +133,18 @@ class UserManagementController extends Controller
             ], 403);
         }
 
+        $userName = $user->first_name . ' ' . $user->last_name;
+        $userId = $user->id;
+
         $user->delete();
+
+        // Log activity
+        ActivityLog::log(
+            'deleted',
+            'User deleted: ' . $userName,
+            'User',
+            $userId
+        );
 
         return response()->json([
             'message' => 'User deleted successfully',

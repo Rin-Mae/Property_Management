@@ -86,6 +86,17 @@
         </div>
     </main>
 
+    <!-- View TOR Request Details Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeDetailsModal()">&times;</span>
+            <h2>TOR Request Details</h2>
+            <div id="detailsContent" style="display: flex; flex-direction: column; gap: 1rem;">
+            </div>
+
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/admin-common.js') }}"></script>
     <script src="{{ asset('js/admin-pending-requests.js') }}"></script>

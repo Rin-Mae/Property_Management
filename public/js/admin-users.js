@@ -17,13 +17,13 @@ async function loadUsers() {
         users.forEach(user => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${user.first_name}</td>
-                <td>${user.middle_name || '-'}</td>
-                <td>${user.last_name}</td>
-                <td>${user.email}</td>
-                <td>${user.student_id || '-'}</td>
-                <td><span class="role-badge ${user.role}">${user.role}</span></td>
-                <td>
+                <td data-label="First Name">${user.first_name}</td>
+                <td data-label="Middle Name">${user.middle_name || '-'}</td>
+                <td data-label="Last Name">${user.last_name}</td>
+                <td data-label="Email">${user.email}</td>
+                <td data-label="Student ID">${user.student_id || '-'}</td>
+                <td data-label="Role"><span class="role-badge ${user.role}">${user.role}</span></td>
+                <td data-label="Actions">
                     <button onclick="editUser(${user.id})" class="btn-edit">Edit</button>
                     <button onclick="deleteUser(${user.id})" class="btn-delete">Delete</button>
                 </td>

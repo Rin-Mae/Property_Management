@@ -695,7 +695,7 @@
 
                 // Show success message
                 const successMsg = document.getElementById('successMessage');
-                successMsg.textContent = '✓ TOR request submitted successfully! You can view your requests below.';
+                successMsg.textContent = '✓ TOR request submitted successfully!';
                 successMsg.classList.add('show');
 
                 // Reset form

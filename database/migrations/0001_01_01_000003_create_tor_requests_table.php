@@ -18,12 +18,11 @@ return new class extends Migration
             $table->string('birthplace');
             $table->string('permanent_address')->nullable();
             $table->date('birthdate');
-            $table->string('student_id')->unique();
+            $table->string('student_id');
             $table->string('course');
             $table->string('degree')->nullable();
             $table->year('year_of_graduation')->nullable();
             $table->string('purpose')->nullable();
-            $table->integer('number_of_copies')->default(1);
             $table->enum('status', ['pending', 'processing', 'approved', 'rejected', 'ready_for_pickup'])->default('pending');
             $table->text('remarks')->nullable();
             $table->timestamp('requested_at')->useCurrent();

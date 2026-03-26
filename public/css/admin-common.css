@@ -190,9 +190,17 @@ h3 {
     margin-top: 2rem;
 }
 
+.requests-section {
+    overflow-x: auto;
+}
+
 .requests-table {
     width: 100%;
     border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-width: 100%;
 }
 
 .requests-table thead {
@@ -205,6 +213,7 @@ h3 {
     text-align: left;
     color: #333;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .requests-table td {
@@ -214,6 +223,12 @@ h3 {
 
 .requests-table tbody tr:hover {
     background: #f9f9f9;
+}
+
+.requests-table .actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 /* ========== Status Badges ========== */
@@ -409,6 +424,124 @@ h3 {
 
     .requests-table {
         font-size: 0.85rem;
+    }
+
+    .requests-table th,
+    .requests-table td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .requests-table .actions {
+        gap: 0.25rem;
+    }
+
+    .requests-table .actions button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .requests-table {
+        font-size: 0.75rem;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .requests-table thead,
+    .requests-table tbody,
+    .requests-table th,
+    .requests-table td,
+    .requests-table tr {
+        display: block;
+    }
+
+    .requests-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .requests-table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .requests-table td {
+        padding: 0.75rem;
+        padding-left: 50%;
+        position: relative;
+        border: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    .requests-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        font-weight: 600;
+        color: #666;
+        width: 45%;
+        word-break: break-word;
+    }
+
+    .requests-table td:last-child {
+        border-bottom: none;
+    }
+
+    .requests-table .actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .requests-table .actions button {
+        width: 100%;
+    }
+
+    .activity-table {
+        font-size: 0.75rem;
+        display: block;
+        overflow-x: auto;
+    }
+
+    .activity-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .activity-table tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .activity-table td {
+        padding: 0.75rem;
+        padding-left: 50%;
+        display: block;
+        position: relative;
+        border: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    .activity-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        font-weight: 600;
+        color: #666;
+        width: 45%;
+        word-break: break-word;
+    }
+
+    .activity-table td:last-child {
+        border-bottom: none;
     }
 }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -41,6 +42,14 @@ class RegisterController extends Controller
             'student_id' => $validated['student_id'],
             'role' => 'student', // Default role for new registrations
         ]);
+
+        // Log activity
+        ActivityLog::log(
+            'created',
+            'New user registered: ' . $validated['first_name'] . ' ' . $validated['last_name'],
+            'User',
+            $user->id
+        );
 
         // Log the user in for session
         Auth::login($user, true);

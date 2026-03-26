@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TORRequest;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 
 class TORRequestController extends Controller
@@ -25,12 +26,11 @@ class TORRequestController extends Controller
             'birthplace' => 'required|string|max:255',
             'birthdate' => 'required|date|before:today',
             'permanent_address' => 'nullable|string|max:500',
-            'student_id' => 'required|string|max:255|unique:tor_requests',
+            'student_id' => 'required|string|max:255',
             'course' => 'required|string|max:255',
             'degree' => 'nullable|string|max:255',
             'year_of_graduation' => 'nullable|integer|min:1900|max:' . date('Y'),
             'purpose' => 'nullable|string|max:500',
-            'number_of_copies' => 'required|integer|min:1|max:10',
         ]);
 
         $torRequest = TORRequest::create([
@@ -38,6 +38,14 @@ class TORRequestController extends Controller
             ...$validated,
             'status' => 'pending',
         ]);
+
+        // Log activity
+        ActivityLog::log(
+            'created',
+            'TOR request submitted for ' . $validated['full_name'],
+            'TORRequest',
+            $torRequest->id
+        );
 
         return response()->json([
             'message' => 'TOR request submitted successfully',
@@ -97,6 +105,14 @@ class TORRequestController extends Controller
             return response()->json(['message' => 'Cannot delete non-pending requests'], 403);
         }
 
+        // Log activity before deletion
+        ActivityLog::log(
+            'deleted',
+            'TOR request deleted for ' . $torRequest->full_name,
+            'TORRequest',
+            $torRequest->id
+        );
+
         $torRequest->delete();
 
         return response()->json(['message' => 'TOR request deleted successfully']);
@@ -123,6 +139,8 @@ class TORRequestController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        $oldStatus = $torRequest->status;
+        
         $torRequest->status = $validated['status'];
         if (array_key_exists('remarks', $validated)) {
             $torRequest->remarks = $validated['remarks'];
@@ -136,6 +154,14 @@ class TORRequestController extends Controller
         }
 
         $torRequest->save();
+
+        // Log activity
+        ActivityLog::log(
+            'updated',
+            'Status changed from ' . $oldStatus . ' to ' . $validated['status'],
+            'TORRequest',
+            $torRequest->id
+        );
 
         return response()->json($torRequest);
     }

@@ -3,6 +3,7 @@
  */
 let allRequests = [];
 let filteredRequests = [];
+let currentViewingRequestId = null;
 
 async function loadAllRequests() {
     try {
@@ -36,14 +37,14 @@ function displayRequests() {
         
         tbody.innerHTML = filteredRequests.map(req => `
             <tr>
-                <td>${req.id}</td>
-                <td>${req.student_id || '-'}</td>
-                <td>${req.full_name}</td>
-                <td>${req.course}</td>
-                <td>${req.purpose || '-'}</td>
-                <td><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></td>
-                <td class="actions">
-                    <button class="btn btn-view" onclick="viewRequestDetails('${req.id}')">View</button>
+                <td data-label="ID">${req.id}</td>
+                <td data-label="Student ID">${req.student_id || '-'}</td>
+                <td data-label="Full Name">${req.full_name}</td>
+                <td data-label="Course">${req.course}</td>
+                <td data-label="Purpose">${req.purpose || '-'}</td>
+                <td data-label="Status"><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></td>
+                <td data-label="Actions" class="actions">
+                    <button class="btn btn-view" onclick="viewTORRequestDetails(${req.id})">View</button>
                 </td>
             </tr>
         `).join('');
@@ -51,16 +52,22 @@ function displayRequests() {
 }
 
 /**
- * View request details in modal
+ * View TOR request details in modal
  */
-window.viewRequestDetails = function (id) {
+window.viewTORRequestDetails = function (id) {
     const req = allRequests.find(r => r.id == id);
     if (!req) return;
+
+    currentViewingRequestId = id;
 
     const content = `
         <div class="detail-row">
             <div class="detail-label">Full Name:</div>
             <div class="detail-value">${req.full_name}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Student ID:</div>
+            <div class="detail-value">${req.student_id || '-'}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Date of Birth:</div>
@@ -71,16 +78,24 @@ window.viewRequestDetails = function (id) {
             <div class="detail-value">${req.birthplace || 'N/A'}</div>
         </div>
         <div class="detail-row">
-            <div class="detail-label">Student ID:</div>
-            <div class="detail-value">${req.student_id}</div>
+            <div class="detail-label">Permanent Address:</div>
+            <div class="detail-value">${req.permanent_address || 'N/A'}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Course:</div>
             <div class="detail-value">${req.course}</div>
         </div>
         <div class="detail-row">
-            <div class="detail-label">Number of Copies:</div>
-            <div class="detail-value">${req.number_of_copies}</div>
+            <div class="detail-label">Degree:</div>
+            <div class="detail-value">${req.degree || 'N/A'}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Year of Graduation:</div>
+            <div class="detail-value">${req.year_of_graduation || 'N/A'}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Purpose:</div>
+            <div class="detail-value">${req.purpose || 'N/A'}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Status:</div>
@@ -96,17 +111,94 @@ window.viewRequestDetails = function (id) {
         </div>` : ''}
     `;
 
-    document.getElementById('detailsContent').innerHTML = content;
-    document.getElementById('detailsModal').classList.add('show');
+    document.getElementById('torRequestContent').innerHTML = content;
+    document.getElementById('torRequestModal').classList.add('show');
 };
 
 /**
- * Apply search filter
+ * Close TOR request details modal
  */
-window.applySearch = function () {
+window.closeTORRequestModal = function () {
+    document.getElementById('torRequestModal').classList.remove('show');
+    currentViewingRequestId = null;
+};
+
+/**
+ * Open edit TOR request modal
+ */
+window.openEditTORModal = function () {
+    closeTORRequestModal();
+    const req = allRequests.find(r => r.id == currentViewingRequestId);
+    if (!req) return;
+
+    document.getElementById('torStatus').value = req.status;
+    document.getElementById('torRemarks').value = req.remarks || '';
+    document.getElementById('editTORModal').classList.add('show');
+};
+
+/**
+ * Close edit TOR request modal
+ */
+window.closeEditTORModal = function () {
+    document.getElementById('editTORModal').classList.remove('show');
+};
+
+/**
+ * Handle edit TOR request form submit
+ */
+window.handleEditTORSubmit = async function (event) {
+    event.preventDefault();
+
+    if (!currentViewingRequestId) return;
+
+    const formData = {
+        status: document.getElementById('torStatus').value,
+        remarks: document.getElementById('torRemarks').value,
+    };
+
+    try {
+        const response = await api.put(`/api/tor-requests/${currentViewingRequestId}`, formData);
+        
+        // Update local request data
+        const index = allRequests.findIndex(r => r.id == currentViewingRequestId);
+        if (index !== -1) {
+            allRequests[index] = response.data;
+            filteredRequests = [...allRequests];
+        }
+
+        closeEditTORModal();
+        displayRequests();
+        showSuccess('TOR request updated successfully');
+    } catch (error) {
+        console.error('Failed to update request:', error);
+        if (error.response?.data?.errors) {
+            const errors = error.response.data.errors;
+            Object.keys(errors).forEach(key => {
+                const errorElement = document.getElementById(key + 'Error');
+                if (errorElement) {
+                    errorElement.textContent = errors[key][0];
+                }
+            });
+        }
+    }
+};
+
+/**
+ * Show success message
+ */
+function showSuccess(message) {
+    // You can implement a toast or alert here
+    alert(message);
+    loadAllRequests(); // Reload to get latest data
+}
+
+/**
+ * Apply the filters function - work with existing implementation
+ */
+window.applyFilters = function () {
     const searchValue = document.getElementById('searchInput')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('statusFilter')?.value || '';
-    const sortBy = document.getElementById('sortBy')?.value || 'date';
+    const sortInput = document.getElementById('sortInput')?.value || 'created_at_desc';
 
     let results = allRequests.filter(req => {
         const matchesSearch = !searchValue ||
@@ -120,12 +212,14 @@ window.applySearch = function () {
     });
 
     // Apply sorting
-    if (sortBy === 'date') {
+    if (sortInput === 'created_at_desc') {
         results.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    } else if (sortBy === 'status') {
-        results.sort((a, b) => a.status.localeCompare(b.status));
-    } else if (sortBy === 'student-id') {
-        results.sort((a, b) => a.student_id.localeCompare(b.student_id));
+    } else if (sortInput === 'created_at_asc') {
+        results.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    } else if (sortInput === 'name_asc') {
+        results.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    } else if (sortInput === 'name_desc') {
+        results.sort((a, b) => b.full_name.localeCompare(a.full_name));
     }
 
     filteredRequests = results;
@@ -138,7 +232,7 @@ window.applySearch = function () {
 window.clearFilters = function () {
     document.getElementById('searchInput').value = '';
     document.getElementById('statusFilter').value = '';
-    document.getElementById('sortBy').value = 'date';
+    document.getElementById('sortInput').value = 'created_at_desc';
     filteredRequests = [...allRequests];
     displayRequests();
 };
@@ -184,22 +278,20 @@ function setupSidebarActive() {
     });
 }
 
-/**
- * Setup event listeners for filters
- */
-function setupFilterListeners() {
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const sortBy = document.getElementById('sortBy');
-
-    if (searchInput) searchInput.addEventListener('input', window.applySearch);
-    if (statusFilter) statusFilter.addEventListener('change', window.applySearch);
-    if (sortBy) sortBy.addEventListener('change', window.applySearch);
-}
+// Setup modal close on outside click
+document.addEventListener('click', (e) => {
+    const torModal = document.getElementById('torRequestModal');
+    const editModal = document.getElementById('editTORModal');
+    
+    if (e.target === torModal) {
+        closeTORRequestModal();
+    }
+    if (e.target === editModal) {
+        closeEditTORModal();
+    }
+});
 
 // Load data on page load
 loadUserInfo();
 loadAllRequests();
 setupSidebarActive();
-setupFilterListeners();
-setupModalCloseOnClickOutside('detailsModal');

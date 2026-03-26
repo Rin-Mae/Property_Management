@@ -36,13 +36,13 @@ function displayRequests() {
         
         tbody.innerHTML = filteredRequests.map(req => `
             <tr>
-                <td>${req.student_id || '-'}</td>
-                <td>${req.full_name}</td>
-                <td>${req.course}</td>
-                <td>${req.purpose || '-'}</td>
-                <td>${req.number_of_copies || 1}</td>
-                <td><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></td>
-                <td class="actions">
+                <td data-label="Student ID">${req.student_id || '-'}</td>
+                <td data-label="Full Name">${req.full_name}</td>
+                <td data-label="Course">${req.course}</td>
+                <td data-label="Purpose">${req.purpose || '-'}</td>
+                <td data-label="Copies">${req.number_of_copies || 1}</td>
+                <td data-label="Status"><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></td>
+                <td data-label="Actions" class="actions">
                     <button class="btn btn-view" onclick="viewRequestDetails('${req.id}')">View</button>
                     <button class="btn btn-approve" onclick="approveRequest('${req.id}')">Approve</button>
                     <button class="btn btn-cancel" onclick="cancelRequest('${req.id}')">Cancel</button>
@@ -65,6 +65,10 @@ window.viewRequestDetails = function (id) {
             <div class="detail-value">${req.full_name}</div>
         </div>
         <div class="detail-row">
+            <div class="detail-label">Student ID:</div>
+            <div class="detail-value">${req.student_id || '-'}</div>
+        </div>
+        <div class="detail-row">
             <div class="detail-label">Date of Birth:</div>
             <div class="detail-value">${req.birthdate ? new Date(req.birthdate).toLocaleDateString() : 'N/A'}</div>
         </div>
@@ -73,16 +77,24 @@ window.viewRequestDetails = function (id) {
             <div class="detail-value">${req.birthplace || 'N/A'}</div>
         </div>
         <div class="detail-row">
-            <div class="detail-label">Student ID:</div>
-            <div class="detail-value">${req.student_id}</div>
+            <div class="detail-label">Permanent Address:</div>
+            <div class="detail-value">${req.permanent_address || 'N/A'}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Course:</div>
             <div class="detail-value">${req.course}</div>
         </div>
         <div class="detail-row">
-            <div class="detail-label">Number of Copies:</div>
-            <div class="detail-value">${req.number_of_copies}</div>
+            <div class="detail-label">Degree:</div>
+            <div class="detail-value">${req.degree || 'N/A'}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Year of Graduation:</div>
+            <div class="detail-value">${req.year_of_graduation || 'N/A'}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Purpose:</div>
+            <div class="detail-value">${req.purpose || 'N/A'}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Status:</div>
@@ -99,17 +111,24 @@ window.viewRequestDetails = function (id) {
 };
 
 /**
+ * Close details modal
+ */
+window.closeDetailsModal = function () {
+    document.getElementById('detailsModal').classList.remove('show');
+};
+
+/**
  * Approve a pending request
  */
 window.approveRequest = async function (id) {
     if (!confirm('Are you sure you want to approve this request?')) return;
 
     try {
-        await api.patch(`/api/tor-requests/${id}`, { status: 'processing' });
+        await api.put(`/api/tor-requests/${id}`, { status: 'processing' });
         allRequests = allRequests.filter(r => r.id != id);
         filteredRequests = filteredRequests.filter(r => r.id != id);
         displayRequests();
-        window.closeModal();
+        closeDetailsModal();
     } catch (error) {
         alert(error.response?.data?.message || 'Failed to approve request');
     }
@@ -122,11 +141,11 @@ window.cancelRequest = async function (id) {
     if (!confirm('Are you sure you want to cancel this request?')) return;
 
     try {
-        await api.patch(`/api/tor-requests/${id}`, { status: 'rejected' });
+        await api.put(`/api/tor-requests/${id}`, { status: 'rejected' });
         allRequests = allRequests.filter(r => r.id != id);
         filteredRequests = filteredRequests.filter(r => r.id != id);
         displayRequests();
-        window.closeModal();
+        closeDetailsModal();
     } catch (error) {
         alert(error.response?.data?.message || 'Failed to cancel request');
     }
@@ -199,4 +218,11 @@ function setupSidebarActive() {
 loadUserInfo();
 loadPendingRequests();
 setupSidebarActive();
-setupModalCloseOnClickOutside('detailsModal');
+
+// Setup modal close on outside click
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('detailsModal');
+    if (e.target === modal) {
+        closeDetailsModal();
+    }
+});

@@ -56,10 +56,10 @@ async function loadActivityLogs() {
                 const actionBadge = `<span class="activity-action ${log.action}">${log.action}</span>`;
                 
                 row.innerHTML = `
-                    <td>${log.user_name || 'Unknown'}</td>
-                    <td>${actionBadge}</td>
-                    <td>${log.description || log.model || '-'}</td>
-                    <td>${log.created_at || ''}</td>
+                    <td data-label="User">${log.user_name || 'Unknown'}</td>
+                    <td data-label="Action">${actionBadge}</td>
+                    <td data-label="Description">${log.description || log.model || '-'}</td>
+                    <td data-label="Date & Time">${log.created_at || ''}</td>
                 `;
                 tbody.appendChild(row);
             });

@@ -102,6 +102,51 @@
         </div>
     </main>
 
+    <!-- View TOR Request Details Modal -->
+    <div id="torRequestModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeTORRequestModal()">&times;</span>
+            <h2>TOR Request Details</h2>
+            <div id="torRequestContent" style="display: flex; flex-direction: column; gap: 1rem;">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="button" class="btn-primary" onclick="openEditTORModal()">Edit Status</button>
+                <button type="button" class="btn-cancel" onclick="closeTORRequestModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit TOR Request Status Modal -->
+    <div id="editTORModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close" onclick="closeEditTORModal()">&times;</span>
+            <h2>Update Request Status</h2>
+            <form id="editTORForm" onsubmit="handleEditTORSubmit(event)">
+                <div class="form-group">
+                    <label for="torStatus">Status</label>
+                    <select id="torStatus" name="status" required>
+                        <option value="">Select Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="approved">Approved</option>
+                        <option value="ready_for_pickup">For Release</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <div class="error-message" id="statusError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="torRemarks">Remarks</label>
+                    <textarea id="torRemarks" name="remarks" rows="4" placeholder="Add any remarks..."></textarea>
+                    <div class="error-message" id="remarksError"></div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-primary">Update Status</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditTORModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/admin-common.js') }}"></script>
     <script src="{{ asset('js/admin-all-requests.js') }}"></script>

@@ -22,7 +22,6 @@ class TORRequest extends Model
         'degree',
         'year_of_graduation',
         'purpose',
-        'number_of_copies',
         'status',
         'remarks',
     ];

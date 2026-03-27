@@ -53,7 +53,6 @@
                     <tr>
                         <th>Student ID</th>
                         <th>Course</th>
-                        <th>Copies</th>
                         <th>Status</th>
                         <th>Requested</th>
                         <th>Actions</th>

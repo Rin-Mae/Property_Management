@@ -69,7 +69,6 @@
                             <th>Full Name</th>
                             <th>Course</th>
                             <th>Purpose</th>
-                            <th>Copies</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>

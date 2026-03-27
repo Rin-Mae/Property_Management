@@ -89,7 +89,6 @@ function displayRequests() {
             <tr>
                 <td>${req.student_id}</td>
                 <td>${req.course}</td>
-                <td>${req.number_of_copies}</td>
                 <td><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></td>
                 <td>${new Date(req.created_at).toLocaleDateString()}</td>
                 <td class="actions">
@@ -147,14 +146,6 @@ window.viewDetails = function (id) {
             <div class="detail-label">Degree:</div>
             <div class="detail-value">${req.degree}</div>
         </div>` : ''}
-        ${req.year_of_graduation ? `<div class="detail-row">
-            <div class="detail-label">Year of Graduation:</div>
-            <div class="detail-value">${req.year_of_graduation}</div>
-        </div>` : ''}
-        <div class="detail-row">
-            <div class="detail-label">Copies Requested:</div>
-            <div class="detail-value">${req.number_of_copies}</div>
-        </div>
         <div class="detail-row">
             <div class="detail-label">Status:</div>
             <div class="detail-value"><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></div>

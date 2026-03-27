@@ -20,7 +20,6 @@ class TORRequest extends Model
         'student_id',
         'course',
         'degree',
-        'year_of_graduation',
         'purpose',
         'status',
         'remarks',

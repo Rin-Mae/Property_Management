@@ -38,9 +38,7 @@ class TORRequestSeeder extends Seeder
             'student_id' => 'STU001',
             'course' => 'Bachelor of Science in Computer Science',
             'degree' => 'Bachelor',
-            'year_of_graduation' => 2022,
             'purpose' => 'Employment',
-            'number_of_copies' => 2,
             'status' => 'pending',
             'remarks' => 'Urgent request for job application',
         ]);
@@ -53,9 +51,7 @@ class TORRequestSeeder extends Seeder
             'student_id' => 'STU004',
             'course' => 'Bachelor of Science in Information Technology',
             'degree' => 'Bachelor',
-            'year_of_graduation' => 2023,
             'purpose' => 'Graduate School Application',
-            'number_of_copies' => 3,
             'status' => 'pending',
             'remarks' => 'For MA program enrollment',
         ]);
@@ -68,9 +64,7 @@ class TORRequestSeeder extends Seeder
             'student_id' => 'STU005',
             'course' => 'Bachelor of Science in Information Systems',
             'degree' => 'Bachelor',
-            'year_of_graduation' => 2021,
             'purpose' => 'Professional License Exam',
-            'number_of_copies' => 1,
             'status' => 'approved',
             'remarks' => 'Ready for pickup - Available Monday-Friday',
         ]);
@@ -83,9 +77,7 @@ class TORRequestSeeder extends Seeder
             'student_id' => 'STU006',
             'course' => 'Bachelor of Science in Civil Engineering',
             'degree' => 'Bachelor',
-            'year_of_graduation' => 2023,
             'purpose' => 'Job Application',
-            'number_of_copies' => 2,
             'status' => 'approved',
             'remarks' => 'Document ready for release',
         ]);
@@ -98,9 +90,7 @@ class TORRequestSeeder extends Seeder
             'student_id' => 'STU007',
             'course' => 'Bachelor of Science in Education',
             'degree' => 'Bachelor',
-            'year_of_graduation' => 2020,
             'purpose' => 'Employment',
-            'number_of_copies' => 1,
             'status' => 'rejected',
             'remarks' => 'Request rejected - missing documents',
         ]);

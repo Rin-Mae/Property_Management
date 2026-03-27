@@ -40,7 +40,6 @@ function displayRequests() {
                 <td data-label="Full Name">${req.full_name}</td>
                 <td data-label="Course">${req.course}</td>
                 <td data-label="Purpose">${req.purpose || '-'}</td>
-                <td data-label="Copies">${req.number_of_copies || 1}</td>
                 <td data-label="Status"><span class="status-badge status-${req.status}">${formatStatus(req.status)}</span></td>
                 <td data-label="Actions" class="actions">
                     <button class="btn btn-view" onclick="viewRequestDetails('${req.id}')">View</button>
@@ -86,10 +85,6 @@ window.viewRequestDetails = function (id) {
         <div class="detail-row">
             <div class="detail-label">Degree:</div>
             <div class="detail-value">${req.degree || 'N/A'}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">Year of Graduation:</div>
-            <div class="detail-value">${req.year_of_graduation || 'N/A'}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Purpose:</div>

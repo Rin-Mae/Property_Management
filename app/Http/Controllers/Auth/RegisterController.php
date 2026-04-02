@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -31,8 +30,8 @@ class RegisterController extends Controller
             'suffix' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'student_id' => 'required|string|unique:users,student_id',
-            'contact_number' => 'required|string|max:20',
+            'student_id' => 'nullable|string|unique:users,student_id',
+            'contact_number' => 'nullable|string|max:20',
         ]);
 
         $user = User::create([
@@ -42,20 +41,10 @@ class RegisterController extends Controller
             'suffix' => $validated['suffix'] ?? null,
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'student_id' => $validated['student_id'],
-            'contact_number' => $validated['contact_number'],
-            'role' => 'student', // Default role for new registrations
+            'student_id' => $validated['student_id'] ?? null,
+            'contact_number' => $validated['contact_number'] ?? null,
+            'role' => 'user', // Default role for new registrations
         ]);
-
-        // Log activity (pass user_id since user isn't authenticated yet)
-        ActivityLog::log(
-            'created',
-            'New user registered: ' . $validated['first_name'] . ' ' . $validated['last_name'],
-            'User',
-            $user->id,
-            null,
-            $user->id
-        );
 
         // Log the user in for session
         Auth::login($user, true);
@@ -72,6 +61,6 @@ class RegisterController extends Controller
             ], 201);
         }
 
-        return redirect()->route('student.dashboard')->with('success', 'Registration successful');
+        return redirect()->route('landing')->with('success', 'Registration successful');
     }
 }

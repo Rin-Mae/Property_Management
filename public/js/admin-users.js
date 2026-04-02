@@ -1,127 +1,243 @@
+// User Management State
+let userManagementState = {
+    users: [],
+    currentPage: 1,
+    totalPages: 1,
+    perPage: 10,
+    filteredUsers: [],
+    editingUserId: null,
+    deleteUserId: null,
+    searchTerm: '',
+    roleFilter: ''
+};
+
 /**
  * Load all users
  */
-let allUsers = [];
-let filteredUsers = [];
-let currentPage = 1;
-const itemsPerPage = 5;
-let isSearchMode = false;
-
-/**
- * Get paginated users
- */
-function getPaginatedUsers() {
-    const usersToDisplay = isSearchMode ? filteredUsers : allUsers;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return usersToDisplay.slice(startIndex, endIndex);
-}
-
-/**
- * Get total pages
- */
-function getTotalPages() {
-    const usersToDisplay = isSearchMode ? filteredUsers : allUsers;
-    return Math.ceil(usersToDisplay.length / itemsPerPage);
-}
-
 async function loadUsers() {
     try {
-        const response = await api.get('/api/admin/users');
-        allUsers = response.data.users;
-        currentPage = 1;
-        displayUsers();
+        const usersLoading = document.getElementById('usersLoading');
+        const usersContainer = document.getElementById('usersContainer');
+
+        if (usersLoading) {
+            usersLoading.style.display = 'block';
+        }
+        if (usersContainer) {
+            usersContainer.style.display = 'none';
+        }
+
+        // API call to get users
+        const response = await axios.get('/api/users');
+        userManagementState.users = response.data;
+        userManagementState.filteredUsers = response.data;
+
+        applyFilters();
+
+        if (usersLoading) {
+            usersLoading.style.display = 'none';
+        }
+        if (usersContainer) {
+            usersContainer.style.display = 'block';
+        }
     } catch (error) {
-        showError('Failed to load users: ' + (error.response?.data?.message || error.message));
+        console.error('Error loading users:', error);
+        showAlert('Failed to load users', 'error');
     }
 }
 
 /**
- * Display users in table with pagination
+ * Apply search and role filters
  */
-function displayUsers() {
+function applyFilters() {
+    let filtered = userManagementState.users;
+
+    // Apply search filter
+    if (userManagementState.searchTerm) {
+        const term = userManagementState.searchTerm.toLowerCase();
+        filtered = filtered.filter(user => {
+            const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            return fullName.includes(term) || email.includes(term);
+        });
+    }
+
+    // Apply role filter
+    if (userManagementState.roleFilter) {
+        filtered = filtered.filter(user => user.role === userManagementState.roleFilter);
+    }
+
+    userManagementState.filteredUsers = filtered;
+    userManagementState.currentPage = 1;
+    userManagementState.totalPages = Math.ceil(filtered.length / userManagementState.perPage);
+
+    updateUsersTable();
+}
+
+/**
+ * Update users table display
+ */
+function updateUsersTable() {
     const tbody = document.getElementById('usersTableBody');
-    const paginationContainer = document.getElementById('usersPagination');
-    const usersToDisplay = isSearchMode ? filteredUsers : allUsers;
-    
+    if (!tbody) return;
+
     tbody.innerHTML = '';
 
-    if (usersToDisplay.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No users found</td></tr>';
-        if (paginationContainer) paginationContainer.style.display = 'none';
+    const start = (userManagementState.currentPage - 1) * userManagementState.perPage;
+    const end = start + userManagementState.perPage;
+    const paginatedUsers = userManagementState.filteredUsers.slice(start, end);
+
+    if (paginatedUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No users found</td></tr>';
+        document.getElementById('usersPagination').style.display = 'none';
         return;
     }
 
-    const paginatedUsers = getPaginatedUsers();
-    const totalPages = getTotalPages();
-    
     paginatedUsers.forEach(user => {
+        const fullName = `${user.first_name}${user.middle_name ? ' ' + user.middle_name : ''} ${user.last_name}${user.suffix ? ' ' + user.suffix : ''}`;
+        const joinDate = formatDate(user.created_at);
+        const status = user.deleted_at ? 'Inactive' : 'Active';
+        const statusClass = user.deleted_at ? 'inactive' : 'active';
+
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td data-label="First Name">${user.first_name}</td>
-            <td data-label="Middle Name">${user.middle_name || '-'}</td>
-            <td data-label="Last Name">${user.last_name}</td>
-            <td data-label="Email">${user.email}</td>
-            <td data-label="Student ID">${user.student_id || '-'}</td>
-            <td data-label="Role"><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td data-label="Actions">
-                <button onclick="editUser(${user.id})" class="btn-edit" title="Edit User"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteUser(${user.id})" class="btn-delete" title="Delete User"><i class="fas fa-trash-alt"></i></button>
+            <td>${fullName}</td>
+            <td>${user.email}</td>
+            <td><span class="role-badge ${user.role}">${user.role}</span></td>
+            <td>${joinDate}</td>
+            <td><span class="status-badge ${statusClass}">${status}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-icon edit" onclick="openEditUserModal(${user.id})" title="Edit">
+                        ✎ Edit
+                    </button>
+                    <button class="btn-icon delete" onclick="openDeleteModal(${user.id})" title="Delete">
+                        🗑 Delete
+                    </button>
+                </div>
             </td>
         `;
         tbody.appendChild(row);
     });
-    
-    // Update pagination controls
-    if (paginationContainer) {
-        paginationContainer.style.display = totalPages > 1 ? 'flex' : 'none';
-        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
-        document.getElementById('prevBtn').disabled = currentPage === 1;
-        document.getElementById('nextBtn').disabled = currentPage === totalPages;
+
+    updatePaginationControls();
+}
+
+/**
+ * Update pagination controls
+ */
+function updatePaginationControls() {
+    const pageInfo = document.getElementById('usersPageInfo');
+    const prevBtn = document.getElementById('usersPrevBtn');
+    const nextBtn = document.getElementById('usersNextBtn');
+    const pagination = document.getElementById('usersPagination');
+
+    if (userManagementState.totalPages > 1) {
+        if (pagination) {
+            pagination.style.display = 'flex';
+        }
+    } else {
+        if (pagination) {
+            pagination.style.display = 'none';
+        }
+    }
+
+    if (pageInfo) {
+        pageInfo.textContent = `Page ${userManagementState.currentPage} of ${userManagementState.totalPages}`;
+    }
+
+    if (prevBtn) {
+        prevBtn.disabled = userManagementState.currentPage <= 1;
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = userManagementState.currentPage >= userManagementState.totalPages;
     }
 }
 
 /**
- * Open modal to add new user
+ * Go to previous page
  */
-function openAddUserModal() {
-    document.getElementById('userId').value = '';
-    document.getElementById('userForm').reset();
-    document.getElementById('modalTitle').textContent = 'Add New User';
-    document.getElementById('passwordHint').style.display = 'block';
-    document.getElementById('password').required = true;
-    document.getElementById('passwordConfirm').required = true;
-    document.getElementById('userModal').style.display = 'block';
-    clearAllErrors();
+function previousUsersPage() {
+    if (userManagementState.currentPage > 1) {
+        userManagementState.currentPage--;
+        updateUsersTable();
+    }
 }
 
 /**
- * Open modal to edit user
+ * Go to next page
  */
-async function editUser(userId) {
-    try {
-        const response = await api.get(`/api/admin/users/${userId}`);
-        const user = response.data.user;
+function nextUsersPage() {
+    if (userManagementState.currentPage < userManagementState.totalPages) {
+        userManagementState.currentPage++;
+        updateUsersTable();
+    }
+}
 
+/**
+ * Open create user modal
+ */
+function openCreateUserModal() {
+    userManagementState.editingUserId = null;
+    document.getElementById('userModalTitle').textContent = 'Create New User';
+    document.getElementById('submitBtn').textContent = 'Create User';
+    document.getElementById('userForm').reset();
+    document.getElementById('userId').value = '';
+    clearFormErrors();
+    
+    // Make password required for new users
+    const passwordField = document.getElementById('password');
+    const passwordConfirmField = document.getElementById('passwordConfirm');
+    if (passwordField) passwordField.required = true;
+    if (passwordConfirmField) passwordConfirmField.required = true;
+    
+    const passwordLabel = document.querySelector('label[for="password"]');
+    if (passwordLabel) {
+        passwordLabel.innerHTML = 'Password * <span class="text-muted">(Required for new users)</span>';
+    }
+    
+    document.getElementById('userModal').classList.add('show');
+}
+
+/**
+ * Open edit user modal
+ */
+async function openEditUserModal(userId) {
+    try {
+        const response = await axios.get(`/api/users/${userId}`);
+        const user = response.data;
+
+        userManagementState.editingUserId = userId;
+        document.getElementById('userModalTitle').textContent = 'Edit User';
+        document.getElementById('submitBtn').textContent = 'Update User';
         document.getElementById('userId').value = user.id;
-        document.getElementById('firstName').value = user.first_name;
+        document.getElementById('firstName').value = user.first_name || '';
         document.getElementById('middleName').value = user.middle_name || '';
-        document.getElementById('lastName').value = user.last_name;
+        document.getElementById('lastName').value = user.last_name || '';
         document.getElementById('suffix').value = user.suffix || '';
-        document.getElementById('email').value = user.email;
-        document.getElementById('studentId').value = user.student_id || '';
-        document.getElementById('role').value = user.role;
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('role').value = user.role || '';
+        document.getElementById('contactNumber').value = user.contact_number || '';
         document.getElementById('password').value = '';
         document.getElementById('passwordConfirm').value = '';
 
-        document.getElementById('modalTitle').textContent = 'Edit User';
-        document.getElementById('passwordHint').style.display = 'inline';
-        document.getElementById('password').required = false;
-        document.getElementById('passwordConfirm').required = false;
-        document.getElementById('userModal').style.display = 'block';
-        clearAllErrors();
+        clearFormErrors();
+        
+        // Make password optional for edits
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('passwordConfirm');
+        if (passwordField) passwordField.required = false;
+        if (passwordConfirmField) passwordConfirmField.required = false;
+        
+        const passwordLabel = document.querySelector('label[for="password"]');
+        if (passwordLabel) {
+            passwordLabel.innerHTML = 'Password <span class="text-muted">(Leave empty to keep current)</span>';
+        }
+        
+        document.getElementById('userModal').classList.add('show');
     } catch (error) {
-        showError('Failed to load user: ' + (error.response?.data?.message || error.message));
+        console.error('Error loading user:', error);
+        showAlert('Failed to load user details', 'error');
     }
 }
 
@@ -129,214 +245,231 @@ async function editUser(userId) {
  * Close user modal
  */
 function closeUserModal() {
-    document.getElementById('userModal').style.display = 'none';
+    document.getElementById('userModal').classList.remove('show');
 }
 
 /**
  * Handle user form submission
  */
-async function handleUserFormSubmit(event) {
+async function handleUserSubmit(event) {
     event.preventDefault();
-    clearAllErrors();
+    clearFormErrors();
 
     const userId = document.getElementById('userId').value;
+    const isCreateMode = !userId;
+
     const formData = {
         first_name: document.getElementById('firstName').value,
         middle_name: document.getElementById('middleName').value,
         last_name: document.getElementById('lastName').value,
         suffix: document.getElementById('suffix').value,
         email: document.getElementById('email').value,
-        student_id: document.getElementById('studentId').value,
-        password: document.getElementById('password').value,
-        password_confirmation: document.getElementById('passwordConfirm').value,
         role: document.getElementById('role').value,
+        contact_number: document.getElementById('contactNumber').value,
     };
+
+    const password = document.getElementById('password').value;
+    const passwordConfirm = document.getElementById('passwordConfirm').value;
+
+    // Validate role - cannot create user role
+    if (formData.role === 'user') {
+        showAlert('Cannot create users with the "User" role', 'error');
+        document.getElementById('roleError').textContent = 'User role is not available for creation';
+        document.getElementById('roleError').classList.add('show');
+        return;
+    }
+
+    // Password validation
+    if (isCreateMode) {
+        // For new users, password is required
+        if (!password) {
+            document.getElementById('passwordError').textContent = 'Password is required for new users';
+            document.getElementById('passwordError').classList.add('show');
+            return;
+        }
+        if (!passwordConfirm) {
+            document.getElementById('passwordConfirmError').textContent = 'Please confirm your password';
+            document.getElementById('passwordConfirmError').classList.add('show');
+            return;
+        }
+        if (password !== passwordConfirm) {
+            document.getElementById('passwordError').textContent = 'Passwords do not match';
+            document.getElementById('passwordError').classList.add('show');
+            return;
+        }
+        formData.password = password;
+        formData.password_confirmation = passwordConfirm;
+    } else {
+        // For existing users, password is optional
+        if (password) {
+            if (!passwordConfirm) {
+                document.getElementById('passwordConfirmError').textContent = 'Please confirm your password';
+                document.getElementById('passwordConfirmError').classList.add('show');
+                return;
+            }
+            if (password !== passwordConfirm) {
+                document.getElementById('passwordError').textContent = 'Passwords do not match';
+                document.getElementById('passwordError').classList.add('show');
+                return;
+            }
+            formData.password = password;
+            formData.password_confirmation = passwordConfirm;
+        }
+    }
+
+    const submitBtn = event.target.querySelector('#submitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
 
     try {
         let response;
         if (userId) {
-            response = await api.put(`/api/admin/users/${userId}`, formData);
+            // Update existing user
+            response = await axios.put(`/api/users/${userId}`, formData);
+            showAlert('User updated successfully', 'success');
         } else {
-            response = await api.post('/api/admin/users', formData);
+            // Create new user
+            response = await axios.post('/api/users', formData);
+            showAlert('User created successfully', 'success');
         }
 
-        showSuccess(response.data.message);
         closeUserModal();
         loadUsers();
     } catch (error) {
-        if (error.response?.status === 422 && error.response?.data?.errors) {
+        console.error('Error submitting form:', error);
+        console.error('Error response:', error.response);
+        
+        if (error.response && error.response.data && error.response.data.errors) {
             const errors = error.response.data.errors;
-            for (const field in errors) {
-                showFieldError(field, errors[field][0]);
-            }
+            Object.keys(errors).forEach(field => {
+                const errorElement = document.getElementById(`${field}Error`);
+                if (errorElement) {
+                    errorElement.textContent = errors[field][0];
+                    errorElement.classList.add('show');
+                }
+            });
+        } else if (error.response && error.response.data && error.response.data.error) {
+            showAlert(error.response.data.error, 'error');
         } else {
-            showError(error.response?.data?.message || 'Failed to save user');
+            showAlert('Error processing user. Please try again.', 'error');
         }
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
     }
 }
 
 /**
- * Delete user
+ * Open delete confirmation modal
  */
-async function deleteUser(userId) {
-    if (!confirm('Are you sure you want to delete this user?')) {
-        return;
-    }
+function openDeleteModal(userId) {
+    userManagementState.deleteUserId = userId;
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+/**
+ * Close delete modal
+ */
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    userManagementState.deleteUserId = null;
+}
+
+/**
+ * Confirm and delete user
+ */
+async function confirmDelete() {
+    const userId = userManagementState.deleteUserId;
+    if (!userId) return;
 
     try {
-        const response = await api.delete(`/api/admin/users/${userId}`);
-        showSuccess(response.data.message);
+        await axios.delete(`/api/users/${userId}`);
+        showAlert('User deleted successfully', 'success');
+        closeDeleteModal();
         loadUsers();
     } catch (error) {
-        showError(error.response?.data?.message || 'Failed to delete user');
+        console.error('Error deleting user:', error);
+        showAlert('Failed to delete user', 'error');
     }
 }
 
 /**
- * Show error message
+ * Clear form errors
  */
-function showError(message) {
-    const errorDiv = document.getElementById('errorMessage');
-    errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
-    setTimeout(() => {
-        errorDiv.style.display = 'none';
-    }, 5000);
-}
-
-/**
- * Show success message
- */
-function showSuccess(message) {
-    const successDiv = document.getElementById('successMessage');
-    successDiv.textContent = message;
-    successDiv.style.display = 'block';
-    setTimeout(() => {
-        successDiv.style.display = 'none';
-    }, 3000);
-}
-
-/**
- * Show field-specific error
- */
-function showFieldError(fieldName, message) {
-    const fieldMap = {
-        'first_name': 'firstNameError',
-        'last_name': 'lastNameError',
-        'middle_name': 'middleNameError',
-        'email': 'emailError',
-        'student_id': 'studentIdError',
-        'password': 'passwordError',
-        'password_confirmation': 'passwordConfirmError',
-        'role': 'roleError',
-    };
-
-    const errorElementId = fieldMap[fieldName];
-    if (errorElementId) {
-        const errorElement = document.getElementById(errorElementId);
-        if (errorElement) {
-            errorElement.textContent = message;
-        }
-    }
-}
-
-/**
- * Clear all error messages
- */
-function clearAllErrors() {
-    const errorElements = document.querySelectorAll('.error-message');
-    errorElements.forEach(el => el.textContent = '');
-}
-
-/**
- * Close modal when clicking outside of it
- */
-window.onclick = function (event) {
-    const modal = document.getElementById('userModal');
-    if (event.target === modal) {
-        closeUserModal();
-    }
-};
-
-/**
- * Load users on page load
- */
-
-/**
- * Go to previous page
- */
-window.previousPage = function() {
-    if (currentPage > 1) {
-        currentPage--;
-        displayUsers();
-        window.scrollTo(0, 0);
-    }
-};
-
-/**
- * Go to next page
- */
-window.nextPage = function() {
-    const totalPages = getTotalPages();
-    if (currentPage < totalPages) {
-        currentPage++;
-        displayUsers();
-        window.scrollTo(0, 0);
-    }
-};
-
-/**
- * Search users by name, email, or student ID
- */
-function searchUsers() {
-    const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
-    
-    if (!searchInput) {
-        showError('Please enter a search term');
-        return;
-    }
-    
-    filteredUsers = allUsers.filter(user => {
-        const fullName = `${user.first_name} ${user.middle_name || ''} ${user.last_name}`.toLowerCase();
-        const email = user.email.toLowerCase();
-        const studentId = (user.student_id || '').toLowerCase();
-        
-        return fullName.includes(searchInput) || 
-               email.includes(searchInput) || 
-               studentId.includes(searchInput);
+function clearFormErrors() {
+    document.querySelectorAll('.error-message').forEach(el => {
+        el.textContent = '';
+        el.classList.remove('show');
     });
-    
-    isSearchMode = true;
-    currentPage = 1;
-    displayUsers();
-    
-    if (filteredUsers.length === 0) {
-        showSuccess(`No results matching "${searchInput}"`);
-    } else {
-        showSuccess(`Found ${filteredUsers.length} user(s)`);
-    }
 }
 
 /**
- * Clear search and reload all users
+ * Show alert message
  */
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    isSearchMode = false;
-    filteredUsers = [];
-    currentPage = 1;
-    displayUsers();
-    showSuccess('Search cleared');
+function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) return;
+
+    const alert = document.createElement('div');
+    alert.className = `alert ${type}`;
+    alert.innerHTML = `
+        <span>${message}</span>
+        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+    `;
+
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
 }
 
+/**
+ * Handle search input
+ */
+function handleSearch(event) {
+    userManagementState.searchTerm = event.target.value;
+    applyFilters();
+}
+
+/**
+ * Handle role filter change
+ */
+function handleRoleFilter(event) {
+    userManagementState.roleFilter = event.target.value;
+    applyFilters();
+}
+
+// Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    loadUserInfo();
+    // Set up event listeners
+    const searchInput = document.getElementById('searchInput');
+    const roleFilter = document.getElementById('roleFilter');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+    }
+
+    if (roleFilter) {
+        roleFilter.addEventListener('change', handleRoleFilter);
+    }
+
+    // Load users on page load
     loadUsers();
-    
-    // Allow Enter key to trigger search
-    document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            searchUsers();
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.show').forEach(modal => {
+                modal.classList.remove('show');
+            });
         }
     });
 });

@@ -1,192 +1,273 @@
-/**
- * Load admin dashboard statistics
- */
-let allActivityLogs = [];
-let activityLogsCurrentPage = 1;
-const activityLogsItemsPerPage = 5;
-
-/**
- * Get paginated activity logs
- */
-function getPaginatedActivityLogs() {
-    const startIndex = (activityLogsCurrentPage - 1) * activityLogsItemsPerPage;
-    const endIndex = startIndex + activityLogsItemsPerPage;
-    return allActivityLogs.slice(startIndex, endIndex);
-}
-
-/**
- * Get total pages for activity logs
- */
-function getActivityLogsTotalPages() {
-    return Math.ceil(allActivityLogs.length / activityLogsItemsPerPage);
-}
-
-async function loadStatistics() {
-    try {
-        const response = await api.get('/api/tor-requests');
-        const requests = response.data;
-
-        // Handle both array and object responses
-        const requestList = Array.isArray(requests) ? requests : (requests.data || []);
-
-        const pending = requestList.filter(r => r.status === 'pending').length;
-        const forRelease = requestList.filter(r => r.status === 'approved' || r.status === 'ready_for_pickup').length;
-        const cancelled = requestList.filter(r => r.status === 'rejected').length;
-
-        // Update stat boxes
-        const pendingCount = document.getElementById('pendingCount');
-        const forReleaseCount = document.getElementById('forReleaseCount');
-        const cancelledCount = document.getElementById('cancelledCount');
-
-        if (pendingCount) pendingCount.textContent = pending;
-        if (forReleaseCount) forReleaseCount.textContent = forRelease;
-        if (cancelledCount) cancelledCount.textContent = cancelled;
-
-        // Show stats grid and hide loading
-        const statsLoading = document.getElementById('statsLoading');
-        const statsGrid = document.getElementById('statsGrid');
-        if (statsLoading) statsLoading.style.display = 'none';
-        if (statsGrid) statsGrid.style.display = 'grid';
-
-    } catch (error) {
-        console.error('Failed to load statistics:', error);
-        const statsLoading = document.getElementById('statsLoading');
-        if (statsLoading) statsLoading.textContent = 'Failed to load statistics';
+// Dashboard state
+let dashboardState = {
+    activityLogs: {
+        data: [],
+        allData: [],
+        currentPage: 1,
+        totalPages: 1,
+        perPage: 10,
+        filter: 'all'
+    },
+    stats: {
+        arrivingToday: 0,
+        departingToday: 0,
+        bookingsToday: 0,
+        currentlyStaying: 0
     }
-}
+};
 
 /**
- * Load activity logs
+ * Initialize dashboard
  */
-async function loadActivityLogs() {
+document.addEventListener('DOMContentLoaded', () => {
+    updateProfileName();
+    loadDashboardStats();
+    loadActivityLogs();
+    setupFilterButtons();
+});
+
+/**
+ * Update profile name from API
+ */
+async function updateProfileName() {
     try {
-        const response = await api.get('/api/admin/activity-logs');
-        allActivityLogs = response.data?.activity_logs || [];
-        activityLogsCurrentPage = 1;
-        displayActivityLogs();
-
-    } catch (error) {
-        console.error('Failed to load activity logs:', error);
-        const activityLoading = document.getElementById('activityLoading');
-        if (activityLoading) {
-            activityLoading.textContent = 'Activity logs feature not yet initialized. Please run migrations.';
-        }
-    }
-}
-
-/**
- * Display activity logs with pagination
- */
-function displayActivityLogs() {
-    const tbody = document.getElementById('activityLogsBody');
-    const paginationContainer = document.getElementById('activityLogsPagination');
-    
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-
-    if (allActivityLogs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: #999;">No activity logs found</td></tr>';
-        if (paginationContainer) paginationContainer.style.display = 'none';
-    } else {
-        const paginatedLogs = getPaginatedActivityLogs();
-        const totalPages = getActivityLogsTotalPages();
+        const response = await axios.get('/api/user');
+        const user = response.data;
         
-        paginatedLogs.forEach(log => {
-            const row = document.createElement('tr');
-            const actionBadge = `<span class="activity-action ${log.action}">${log.action}</span>`;
-            
-            row.innerHTML = `
-                <td data-label="User">${log.user_name || 'Unknown'}</td>
-                <td data-label="Action">${actionBadge}</td>
-                <td data-label="Description">${log.description || log.model || '-'}</td>
-                <td data-label="Date & Time">${log.created_at || ''}</td>
-            `;
-            tbody.appendChild(row);
+        const profileName = document.getElementById('profileName');
+        if (profileName && user.name) {
+            profileName.textContent = user.name;
+        }
+        
+        const userInfo = document.getElementById('userInfo');
+        if (userInfo && user.role) {
+            userInfo.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+    }
+}
+
+/**
+ * Load dashboard statistics from API
+ */
+async function loadDashboardStats() {
+    try {
+        const response = await axios.get('/api/reports/summary');
+        
+        dashboardState.stats = {
+            arrivingToday: response.data.arriving_today || 0,
+            departingToday: response.data.departing_today || 0,
+            bookingsToday: response.data.bookings_today || 0,
+            currentlyStaying: response.data.currently_staying || 0
+        };
+
+        // Update stat cards
+        const arrivingEl = document.getElementById('arrivingToday');
+        const departingEl = document.getElementById('departingToday');
+        const bookingsEl = document.getElementById('bookingsToday');
+        const stayingEl = document.getElementById('currentlyStaying');
+
+        if (arrivingEl) arrivingEl.textContent = dashboardState.stats.arrivingToday;
+        if (departingEl) departingEl.textContent = dashboardState.stats.departingToday;
+        if (bookingsEl) bookingsEl.textContent = dashboardState.stats.bookingsToday;
+        if (stayingEl) stayingEl.textContent = dashboardState.stats.currentlyStaying;
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+
+/**
+ * Setup filter button event listeners
+ */
+function setupFilterButtons() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all buttons
+            filterBtns.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            // Update filter
+            dashboardState.activityLogs.filter = btn.getAttribute('data-filter');
+            dashboardState.activityLogs.currentPage = 1;
+            applyFilter();
         });
-        
-        // Update pagination controls
-        if (paginationContainer) {
-            paginationContainer.style.display = totalPages > 1 ? 'flex' : 'none';
-            document.getElementById('activityLogsPageInfo').textContent = `Page ${activityLogsCurrentPage} of ${totalPages}`;
-            document.getElementById('activityLogsPrevBtn').disabled = activityLogsCurrentPage === 1;
-            document.getElementById('activityLogsNextBtn').disabled = activityLogsCurrentPage === totalPages;
-        }
-    }
-
-    // Show activity logs and hide loading
-    const activityLoading = document.getElementById('activityLoading');
-    const activityLogsContainer = document.getElementById('activityLogsContainer');
-    if (activityLoading) activityLoading.style.display = 'none';
-    if (activityLogsContainer) activityLogsContainer.style.display = 'block';
-}
-
-/**
- * Navigation functions
- */
-window.goToDashboard = function () {
-    window.location.href = '/admin/dashboard';
-};
-
-window.goToPendingRequests = function () {
-    window.location.href = '/admin/pending-requests';
-};
-
-window.goToProcessingRequests = function () {
-    window.location.href = '/admin/processing-requests';
-};
-
-window.goToAllRequests = function () {
-    window.location.href = '/admin/all-requests';
-};
-
-/**
- * Activity logs pagination
- */
-window.previousActivityLogsPage = function() {
-    if (activityLogsCurrentPage > 1) {
-        activityLogsCurrentPage--;
-        displayActivityLogs();
-        window.scrollTo(0, 0);
-    }
-};
-
-window.nextActivityLogsPage = function() {
-    const totalPages = getActivityLogsTotalPages();
-    if (activityLogsCurrentPage < totalPages) {
-        activityLogsCurrentPage++;
-        displayActivityLogs();
-        window.scrollTo(0, 0);
-    }
-};
-
-/**
- * Setup sidebar active state
- */
-function setupSidebarActive() {
-    const currentPath = window.location.pathname;
-    const buttons = document.querySelectorAll('.sidebar-menu button');
-    
-    buttons.forEach(button => {
-        button.classList.remove('active');
-        if (currentPath.includes('dashboard') && button.textContent.includes('Dashboard')) {
-            button.classList.add('active');
-        } else if (currentPath.includes('pending') && button.textContent.includes('Pending')) {
-            button.classList.add('active');
-        } else if (currentPath.includes('processing') && button.textContent.includes('Processing')) {
-            button.classList.add('active');
-        } else if (currentPath.includes('all-requests') && button.textContent.includes('All')) {
-            button.classList.add('active');
-        }
     });
 }
 
-// Load data on page load
-loadUserInfo();
-setupSidebarActive();
+/**
+ * Apply filter to activity logs
+ */
+function applyFilter() {
+    const filter = dashboardState.activityLogs.filter;
+    
+    if (filter === 'all') {
+        dashboardState.activityLogs.data = dashboardState.activityLogs.allData;
+    } else {
+        dashboardState.activityLogs.data = dashboardState.activityLogs.allData.filter(log => log.type === filter);
+    }
 
-// Load statistics and activity logs without blocking page render
-setTimeout(() => {
-    loadStatistics();
-    loadActivityLogs();
-}, 100);
+    dashboardState.activityLogs.totalPages = Math.ceil(dashboardState.activityLogs.data.length / dashboardState.activityLogs.perPage);
+    updateActivityLogsTable();
+}
+
+/**
+ * Load activity logs from API
+ */
+async function loadActivityLogs(page = 1) {
+    try {
+        const activityLoading = document.getElementById('activityLoading');
+        const activityLogsContainer = document.getElementById('activityLogsContainer');
+        
+        if (activityLoading) {
+            activityLoading.style.display = 'block';
+        }
+        if (activityLogsContainer) {
+            activityLogsContainer.style.display = 'none';
+        }
+
+        // Fetch booking history from API
+        const response = await axios.get('/api/reports/booking-history', {
+            params: { page: page }
+        });
+        
+        const bookings = response.data.data || response.data;
+        dashboardState.activityLogs.allData = bookings;
+        
+        applyFilter();
+
+        if (activityLoading) {
+            activityLoading.style.display = 'none';
+        }
+        if (activityLogsContainer) {
+            activityLogsContainer.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error loading activity logs:', error);
+        const activityLogsContainer = document.getElementById('activityLogsContainer');
+        if (activityLogsContainer) {
+            activityLogsContainer.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load activity logs</p>';
+        }
+    }
+}
+
+/**
+ * Update activity logs table display
+ */
+function updateActivityLogsTable() {
+    const tbody = document.getElementById('activityLogsBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    const start = (dashboardState.activityLogs.currentPage - 1) * dashboardState.activityLogs.perPage;
+    const end = start + dashboardState.activityLogs.perPage;
+    const paginatedLogs = dashboardState.activityLogs.data.slice(start, end);
+
+    if (paginatedLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No data found</td></tr>';
+        return;
+    }
+
+    paginatedLogs.forEach(log => {
+        const status = log.status || 'pending';
+        const statusBadgeClass = status.toLowerCase().replace(' ', '_');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${log.guest_name || log.guest || '-'}</td>
+            <td>${log.room_name || log.room || '-'}</td>
+            <td>${log.check_in || log.checkInDate || '-'}</td>
+            <td>${log.check_out || log.checkOutDate || '-'}</td>
+            <td><span class="status-badge ${statusBadgeClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+            <td>${log.total_price ? '₱' + log.total_price : '-'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    updatePaginationControls();
+}
+
+/**
+ * Update pagination controls
+ */
+function updatePaginationControls() {
+    const pageInfo = document.getElementById('activityLogsPageInfo');
+    const prevBtn = document.getElementById('activityLogsPrevBtn');
+    const nextBtn = document.getElementById('activityLogsNextBtn');
+    const pagination = document.getElementById('activityLogsPagination');
+
+    if (dashboardState.activityLogs.totalPages > 1) {
+        if (pagination) {
+            pagination.style.display = 'flex';
+        }
+    } else {
+        if (pagination) {
+            pagination.style.display = 'none';
+        }
+    }
+
+    if (pageInfo) {
+        pageInfo.textContent = `Page ${dashboardState.activityLogs.currentPage} of ${dashboardState.activityLogs.totalPages}`;
+    }
+
+    if (prevBtn) {
+        prevBtn.disabled = dashboardState.activityLogs.currentPage <= 1;
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = dashboardState.activityLogs.currentPage >= dashboardState.activityLogs.totalPages;
+    }
+}
+
+/**
+ * Go to previous page
+ */
+function previousActivityLogsPage() {
+    if (dashboardState.activityLogs.currentPage > 1) {
+        dashboardState.activityLogs.currentPage--;
+        updateActivityLogsTable();
+    }
+}
+
+/**
+ * Go to next page
+ */
+function nextActivityLogsPage() {
+    if (dashboardState.activityLogs.currentPage < dashboardState.activityLogs.totalPages) {
+        dashboardState.activityLogs.currentPage++;
+        updateActivityLogsTable();
+    }
+}
+
+/**
+ * Format date to readable format
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+/**
+ * Show error message
+ */
+function showError(message) {
+    const alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) return;
+
+    const alert = document.createElement('div');
+    alert.className = 'alert error';
+    alert.innerHTML = `
+        <span>${message}</span>
+        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+    `;
+
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}

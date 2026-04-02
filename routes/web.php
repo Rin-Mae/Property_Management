@@ -4,17 +4,33 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\TORRequestController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\PaymentsController;
 
-// Authentication Routes
+// Landing page - root route (shows landing for everyone)
+Route::get('/', function () {
+    return view('landing');
+})->name('landing');
+
+// Prevent direct access to auth pages - guests are redirected to landing
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'show'])->name('login');
+    // If a guest tries to access login/register via URL, they'll go through these routes
+    // But the modals on landing.blade.php handle the actual form submissions
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
-    Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'register'])->name('register.post');
+    
+    // Redirect GET requests to /login and /register back to landing page
+    Route::get('/login', function () {
+        return redirect()->route('landing');
+    })->name('login');
+    
+    Route::get('/register', function () {
+        return redirect()->route('landing');
+    })->name('register');
 });
 
 // Logout
@@ -26,6 +42,36 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
+    
+    // User Management
+    Route::get('/admin/users', function () {
+        return view('admin.users');
+    })->name('admin.users');
+    
+    // Client Management
+    Route::get('/admin/clients', function () {
+        return view('admin.clients');
+    })->name('admin.clients');
+
+    // Room Management
+    Route::get('/admin/rooms', function () {
+        return view('admin.rooms');
+    })->name('admin.rooms');
+    
+    // Bookings Management
+    Route::get('/admin/bookings', function () {
+        return view('admin.bookings');
+    })->name('admin.bookings');
+    
+    // Payments Management
+    Route::get('/admin/payments', function () {
+        return view('admin.payments');
+    })->name('admin.payments');
+    
+    // Reports
+    Route::get('/admin/reports', function () {
+        return view('admin.reports');
+    })->name('admin.reports');
     
     // Student Dashboard
     Route::get('/student/dashboard', function () {
@@ -40,39 +86,38 @@ Route::middleware('auth')->group(function () {
         }
         return redirect()->route('student.dashboard');
     })->name('dashboard');
-    
-    // TOR Request Routes
-    Route::get('/tor/create', [TORRequestController::class, 'create'])->name('tor.create');
-    Route::get('/tor/requests', function () {
-        return redirect()->route('student.dashboard');
-    })->name('tor.requests');
-    
-    // Student Settings
-    Route::get('/settings', [SettingsController::class, 'show'])->name('settings.show');
-    
-    // Admin pending requests
-    Route::get('/admin/pending-requests', function () {
-        return view('admin.pending-requests');
-    })->name('admin.pending-requests');
-    
-    // Admin all requests
-    Route::get('/admin/all-requests', function () {
-        return view('admin.all-requests');
-    })->name('admin.all-requests');
-    
-    // Admin processing requests
-    Route::get('/admin/processing', function () {
-        return view('admin.processing-requests');
-    })->name('admin.processing');
-    
-    // Admin user management
-    Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users');
-    
-    // Admin Settings
-    Route::get('/admin/settings', [AdminSettingsController::class, 'show'])->name('admin.settings.show');
 });
 
-// Redirect root to login or dashboard
-Route::get('/', function () {
-    return auth('web')->check() ? redirect()->route('dashboard') : redirect()->route('login');
+// API Routes for User Management
+Route::middleware('auth')->prefix('api')->group(function () {
+    Route::get('/user', [LoginController::class, 'user']);
+    Route::apiResource('users', UserController::class);
+    Route::apiResource('clients', ClientController::class);
+    Route::apiResource('rooms', RoomController::class);
+    Route::patch('/rooms/{room}/status', [RoomController::class, 'updateStatus']);
+    Route::get('/rooms-types', [RoomController::class, 'getTypes']);
+    Route::get('/amenities', [RoomController::class, 'getAmenities']);
+    Route::get('/bookings', [BookingController::class, 'index']);
+    Route::patch('/bookings/{reservation}/status', [BookingController::class, 'updateStatus']);
+    
+    // Reports endpoints
+    Route::get('/reports/summary', [ReportsController::class, 'getSummary']);
+    Route::get('/reports/chart', [ReportsController::class, 'getBookingsChart']);
+    Route::get('/reports/bookings', [ReportsController::class, 'getBookingHistory']);
+    Route::get('/reports/payments', [ReportsController::class, 'getPaymentHistory']);
+    Route::get('/reports/months', [ReportsController::class, 'getAvailableMonths']);
+    
+    // Payments endpoints
+    Route::get('/payments', [PaymentsController::class, 'index']);
+    Route::get('/payments/{reservation}', [PaymentsController::class, 'show']);
+    Route::patch('/payments/{reservation}/approve', [PaymentsController::class, 'approve']);
+    Route::patch('/payments/{reservation}/reject', [PaymentsController::class, 'reject']);
+});
+
+// Catch-all redirect - guests trying to access protected routes go to landing
+Route::fallback(function () {
+    if (!auth('web')->check()) {
+        return redirect()->route('landing');
+    }
+    return abort(404);
 });

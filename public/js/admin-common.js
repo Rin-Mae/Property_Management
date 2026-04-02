@@ -1,209 +1,111 @@
-/**
- * Configure axios with CSRF token and auth
- */
-const api = axios.create({
-    baseURL: window.location.origin,
-    headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-    }
-});
-
-const token = document.querySelector('meta[name="csrf-token"]');
-if (token) {
-    api.defaults.headers.common['X-CSRF-TOKEN'] = token.getAttribute('content');
+// Set up axios with CSRF token
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+if (csrfToken) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+    axios.defaults.headers.post['X-CSRF-TOKEN'] = csrfToken;
 }
 
-api.interceptors.request.use(config => {
-    const authToken = localStorage.getItem('auth_token');
-    if (authToken) {
-        config.headers.Authorization = `Bearer ${authToken}`;
-    }
-    return config;
-});
-
-api.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+/**
+ * Handle logout
+ */
+async function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            const response = await axios.post('/logout', {}, {
+                headers: {
+                    'X-CSRF-TOKEN': token
+                }
+            });
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Logout error:', error);
+            alert('Error logging out. Please try again.');
         }
-        return Promise.reject(error);
     }
-);
-
-/**
- * Get initials from a name
- */
-function getInitials(name) {
-    if (!name) return 'A';
-    return name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2);
 }
 
 /**
- * Load admin user information
+ * Show error message
  */
-async function loadUserInfo() {
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message danger';
+    errorDiv.textContent = message;
+    
+    const container = document.querySelector('.container');
+    if (container) {
+        container.insertBefore(errorDiv, container.firstChild);
+        setTimeout(() => errorDiv.remove(), 5000);
+    }
+}
+
+/**
+ * Show success message
+ */
+function showSuccess(message) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'error-message';
+    successDiv.style.background = '#d4edda';
+    successDiv.style.color = '#155724';
+    successDiv.style.borderLeftColor = '#c3e6cb';
+    successDiv.textContent = message;
+    
+    const container = document.querySelector('.container');
+    if (container) {
+        container.insertBefore(successDiv, container.firstChild);
+        setTimeout(() => successDiv.remove(), 5000);
+    }
+}
+
+/**
+ * Format date to readable format
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return date.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Truncate text to specified length
+ */
+function truncateText(text, maxLength = 50) {
+    if (text.length > maxLength) {
+        return text.substring(0, maxLength) + '...';
+    }
+    return text;
+}
+
+/**
+ * Update user profile name
+ */
+async function updateProfileName() {
     try {
-        const response = await api.get('/api/user');
+        const response = await axios.get('/api/user');
         const user = response.data;
         
-        const profileNameEl = document.getElementById('profileName');
-        const profileAvatarEl = document.getElementById('profileAvatar');
-        const userInfoEl = document.getElementById('userInfo');
-        
-        // Construct full name from first_name and last_name
-        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-        
-        if (profileNameEl && fullName) {
-            profileNameEl.textContent = fullName;
-        }
-        if (profileAvatarEl && fullName) {
-            profileAvatarEl.textContent = getInitials(fullName);
+        const profileName = document.getElementById('profileName');
+        if (profileName) {
+            profileName.textContent = user.name || 'Admin';
         }
         
-        // Update user info with role
-        if (userInfoEl) {
-            userInfoEl.textContent = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User';
+        const userInfo = document.getElementById('userInfo');
+        if (userInfo) {
+            userInfo.textContent = user.email || '';
         }
     } catch (error) {
-        console.error('Failed to load user:', error);
-        localStorage.removeItem('auth_token');
-        window.location.href = '/login';
+        console.error('Error fetching user profile:', error);
     }
 }
 
-/**
- * Format request status for display
- */
-function formatStatus(status) {
-    const statusMap = {
-        'pending': 'Pending',
-        'processing': 'Processing',
-        'approved': 'Approved',
-        'rejected': 'Rejected',
-        'ready_for_pickup': 'Ready for Pickup'
-    };
-    return statusMap[status] || status;
-}
-
-/**
- * Handle admin logout
- */
-window.handleLogout = async function () {
-    try {
-        await api.post('/api/logout');
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-    }
-};
-
-/**
- * Close modal dialog
- */
-window.closeModal = function (modalId = 'detailsModal') {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('show');
-    }
-};
-
-/**
- * Navigation: Go to dashboard
- */
-window.goToDashboard = function () {
-    window.location.href = '/dashboard';
-};
-
-/**
- * Navigation: Go to all requests
- */
-window.goToAllRequests = function () {
-    window.location.href = '/admin/all-requests';
-};
-
-/**
- * Navigation: Go to pending requests
- */
-window.goToPendingRequests = function () {
-    window.location.href = '/admin/pending-requests';
-};
-
-/**
- * Navigation: Go to processing requests
- */
-window.goToProcessing = function () {
-    window.location.href = '/admin/processing';
-};
-
-/**
- * Navigation: Go to user management
- */
-window.goToUserManagement = function () {
-    window.location.href = '/admin/users';
-};
-
-/**
- * Navigation: Go to admin settings
- */
-window.goToSettings = function () {
-    window.location.href = '/admin/settings';
-};
-
-/**
- * Update pending requests badge in real-time
- */
-let badgeUpdateInterval = null;
-
-async function updatePendingBadge() {
-    try {
-        const response = await api.get('/api/tor-requests?status=pending&per_page=1');
-        const pendingCount = response.data.total || 0;
-        
-        const badge = document.getElementById('adminPendingBadge');
-        if (badge) {
-            if (pendingCount > 0) {
-                badge.textContent = pendingCount;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-    } catch (error) {
-        console.error('Failed to update pending badge:', error);
-    }
-}
-
-/**
- * Start real-time badge update (refresh every 5 seconds)
- */
-function startBadgeUpdate() {
-    // Update immediately
-    updatePendingBadge();
-    
-    // Update every 5 seconds
-    badgeUpdateInterval = setInterval(() => {
-        updatePendingBadge();
-    }, 5000);
-}
-
-/**
- * Stop real-time badge update
- */
-function stopBadgeUpdate() {
-    if (badgeUpdateInterval) {
-        clearInterval(badgeUpdateInterval);
-        badgeUpdateInterval = null;
-    }
-}
-
-// Auto-start badge update when page loads
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    startBadgeUpdate();
+    updateProfileName();
 });
-

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -45,14 +44,6 @@ class LoginController extends Controller
         // Log the user in for session
         Auth::login($user, true);
 
-        // Log activity
-        ActivityLog::log(
-            'viewed',
-            'User logged in: ' . $user->first_name . ' ' . $user->last_name,
-            'User',
-            $user->id
-        );
-
         // Create token for the user
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -66,9 +57,8 @@ class LoginController extends Controller
             ]);
         }
 
-        // Redirect based on role
-        $redirectRoute = $user->role === 'admin' ? 'admin.dashboard' : 'student.dashboard';
-        return redirect()->route($redirectRoute)->with('success', 'Login successful');
+        // Redirect to landing page
+        return redirect()->route('landing')->with('success', 'Login successful');
     }
 
     /**
@@ -86,7 +76,7 @@ class LoginController extends Controller
             return response()->json(['message' => 'Logged out successfully']);
         }
 
-        return redirect()->route('login')->with('success', 'Logged out successfully');
+        return redirect()->route('landing')->with('success', 'Logged out successfully');
     }
 
     /**

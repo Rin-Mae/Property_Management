@@ -12,7 +12,7 @@ html, body {
 }
 
 body {
-    background: linear-gradient(135deg, #00a516 0%, #007810 100%);
+    background: #007a0f;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
@@ -102,15 +102,15 @@ input[type="password"]:focus,
 input[type="number"]:focus,
 select:focus {
     outline: none;
-    border-color: #00a516;
-    box-shadow: 0 0 0 3px rgba(0, 165, 22, 0.1);
+    border-color: #007a0f;
+    box-shadow: 0 0 0 3px rgba(139, 111, 71, 0.1);
 }
 
 .form-control:focus {
     outline: none;
-    border-color: #00a516;
+    border-color: #007a0f;
     background-color: #fff;
-    box-shadow: 0 0 0 3px rgba(0, 165, 22, 0.1);
+    box-shadow: 0 0 0 3px rgba(139, 111, 71, 0.1);
 }
 
 /* ========== Error and Success Messages ========== */
@@ -123,7 +123,7 @@ select:focus {
 
 .success-message {
     background: #d4edda;
-    color: #155724;
+    color: #008c12;
     padding: 1rem;
     border-radius: 4px;
     margin-bottom: 1rem;
@@ -153,7 +153,7 @@ select:focus {
 button[type="submit"] {
     width: 100%;
     padding: 0.8rem;
-    background: #00a516;
+    background: #007a0f;
     color: white;
     border: none;
     border-radius: 4px;
@@ -165,7 +165,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-    background: #007810;
+    background: #008c12;
     transform: translateY(-2px);
 }
 
@@ -186,7 +186,7 @@ button[type="submit"]:disabled {
 }
 
 .form-footer a {
-    color: #00a516;
+    color: #007a0f;
     text-decoration: none;
     font-weight: 600;
 }

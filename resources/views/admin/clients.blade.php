@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ asset('images/NC Logo.png') }}">
-    <title>User Management - Hotel Management System</title>
+    <title>Client Management - Hotel Management System</title>
     <link rel="stylesheet" href="{{ asset('css/admin-common.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-users.css') }}">
 </head>
@@ -45,12 +45,17 @@
                 </a>
             </li>
             <li>
-                <a href="/admin/users" class="sidebar-link active">
+                <a href="/admin/users" class="sidebar-link">
                     <span>Users</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/clients" class="sidebar-link">
+                <a href="/admin/clients" class="sidebar-link active">
+                    <span>Clients</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/clients" class="sidebar-link active">
                     <span>Clients</span>
                 </a>
             </li>
@@ -64,54 +69,47 @@
             <div class="container">
                 <!-- Page Header -->
                 <div class="page-header">
-                    <h1>User Management</h1>
-                    <button class="btn btn-primary" onclick="openCreateUserModal()">+ Create New User</button>
+                    <h1>Client Management</h1>
                 </div>
 
                 <!-- Alerts -->
                 <div id="alertContainer"></div>
 
-                <!-- Users Table -->
+                <!-- Clients Table -->
                 <div class="dashboard-card">
-                    <h3>All Users</h3>
+                    <h3>All Clients</h3>
 
                     <!-- Search and Filter -->
                     <div class="search-filter-section">
-                        <input type="text" id="searchInput" placeholder="Search by name or email..."
-                            class="search-input">
-                        <select id="roleFilter" class="role-filter">
-                            <option value="">All Roles</option>
-                            <option value="admin">Admin</option>
-                            <option value="housekeeper">Housekeeper</option>
-                            <option value="user">User</option>
-                        </select>
+                        <input type="text" id="searchInput" placeholder="Search by name..." class="search-input">
                     </div>
 
-                    <div id="usersLoading" class="loading">Loading users...</div>
-                    <div id="usersContainer" style="display: none;">
+                    <div id="clientsLoading" class="loading">Loading clients...</div>
+                    <div id="clientsContainer" style="display: none;">
                         <div class="users-table-wrapper">
                             <table class="users-table">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
                                         <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Join Date</th>
+                                        <th>Contact Number</th>
+                                        <th>Address</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="usersTableBody">
+                                <tbody id="clientsTableBody">
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        <div id="usersPagination" class="pagination-controls" style="display: none;">
-                            <button id="usersPrevBtn" onclick="previousUsersPage()" class="pagination-btn">←
+                        <div id="clientsPagination" class="pagination-controls" style="display: none;">
+                            <button id="clientsPrevBtn" onclick="previousClientsPage()" class="pagination-btn">←
                                 Previous</button>
-                            <span id="usersPageInfo" class="pagination-info">Page 1 of 1</span>
-                            <button id="usersNextBtn" onclick="nextUsersPage()" class="pagination-btn">Next →</button>
+                            <span id="clientsPageInfo" class="pagination-info">Page 1 of 1</span>
+                            <button id="clientsNextBtn" onclick="nextClientsPage()" class="pagination-btn">Next
+                                →</button>
                         </div>
                     </div>
                 </div>
@@ -119,18 +117,21 @@
         </main>
     </div>
 
-    <!-- Create/Edit User Modal -->
-    <div id="userModal" class="modal">
+    <!-- Edit Client Modal -->
+    <div id="clientModal" class="modal">
         <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h2 id="userModalTitle">Create New User</h2>
-                <button class="close-btn" onclick="closeUserModal()">&times;</button>
+                <h2 id="clientModalTitle">Edit Client</h2>
+                <button class="close-btn" onclick="closeClientModal()">&times;</button>
             </div>
 
-            <form id="userForm" onsubmit="handleUserSubmit(event)" class="modal-form">
+            <form id="clientForm" onsubmit="handleClientSubmit(event)" class="modal-form">
                 @csrf
                 <div class="modal-body">
-                    <input type="hidden" id="userId" name="user_id">
+                    <input type="hidden" id="clientId" name="client_id">
+
+                    <!-- Personal Information Section -->
+                    <div class="form-section-title">Personal Information</div>
 
                     <div class="form-row">
                         <div class="form-group">
@@ -152,13 +153,10 @@
                             <input type="text" id="lastName" name="last_name" required>
                             <div class="error-message" id="lastNameError"></div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="suffix">Suffix</label>
-                            <input type="text" id="suffix" name="suffix">
-                            <div class="error-message" id="suffixError"></div>
-                        </div>
                     </div>
+
+                    <!-- Contact Information Section -->
+                    <div class="form-section-title">Contact Information</div>
 
                     <div class="form-row">
                         <div class="form-group">
@@ -168,41 +166,27 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="role">Role *</label>
-                            <select id="role" name="role" required>
-                                <option value="">Select a role</option>
-                                <option value="admin">Admin</option>
-                                <option value="housekeeper">Housekeeper</option>
-                            </select>
-                            <div class="error-message" id="roleError"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="contactNumber">Contact Number</label>
-                            <input type="tel" id="contactNumber" name="contact_number">
+                            <label for="contactNumber">Contact Number *</label>
+                            <input type="tel" id="contactNumber" name="contact_number" required>
                             <div class="error-message" id="contactNumberError"></div>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="password">Password *</label>
-                            <input type="password" id="password" name="password">
-                            <div class="error-message" id="passwordError"></div>
-                        </div>
+                    <!-- Address Information Section -->
+                    <div class="form-section-title">Address Information</div>
 
-                        <div class="form-group">
-                            <label for="passwordConfirm">Confirm Password</label>
-                            <input type="password" id="passwordConfirm" name="password_confirmation">
-                            <div class="error-message" id="passwordConfirmError"></div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="address">Home Address *</label>
+                            <input type="text" id="address" name="address" required>
+                            <div class="error-message" id="addressError"></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" id="submitBtn">Create User</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Update Client</button>
                 </div>
             </form>
         </div>
@@ -216,18 +200,19 @@
                 <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+                <p>Are you sure you want to delete this client? This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete User</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete Client</button>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/admin-common.js') }}"></script>
-    <script src="{{ asset('js/admin-users.js') }}"></script>
+    <script src="{{ asset('js/admin-clients.js') }}"></script>
 </body>
 
 </html>

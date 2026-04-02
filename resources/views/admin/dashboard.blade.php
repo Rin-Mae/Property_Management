@@ -5,8 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/NC Logo.png') }}">
     <title>Admin Dashboard - Online TOR Request System</title>
     <link rel="stylesheet" href="{{ asset('css/admin-common.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -18,95 +20,128 @@
 
         <ul class="sidebar-menu">
             <li>
-                <button onclick="window.location.href='/dashboard'" class="active" type="button">
+                <a href="/dashboard" class="sidebar-link active">
                     <span>Dashboard</span>
-                </button>
+                </a>
             </li>
             <li>
-                <button onclick="window.location.href='/admin/all-requests'" type="button">
-                    <span>All Requests</span>
-                </button>
+                <a href="/admin/rooms" class="sidebar-link">
+                    <span>Rooms</span>
+                </a>
             </li>
             <li>
-                <button onclick="window.location.href='/admin/processing'" type="button">
-                    <span>Processing</span>
-                </button>
+                <a href="/admin/bookings" class="sidebar-link">
+                    <span>Bookings</span>
+                </a>
             </li>
             <li>
-                <button onclick="window.location.href='/admin/pending-requests'" type="button">
-                    <span>Pending Requests</span>
-                    <span class="badge" id="adminPendingBadge" style="display: none;">0</span>
-                </button>
+                <a href="/admin/payments" class="sidebar-link">
+                    <span>Payments</span>
+                </a>
             </li>
             <li>
-                <button onclick="window.location.href='/admin/users'" type="button">
-                    <span>User Management</span>
-                </button>
+                <a href="/admin/reports" class="sidebar-link">
+                    <span>Reports</span>
+                </a>
             </li>
             <li>
-                <button onclick="window.location.href='/admin/settings'" type="button">
-                    <span>Settings</span>
-                </button>
+                <a href="/admin/users" class="sidebar-link">
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/clients" class="sidebar-link">
+                    <span>Clients</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/clients" class="sidebar-link">
+                    <span>Clients</span>
+                </a>
             </li>
         </ul>
 
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </aside>
 
-    <main class="main-content">
-        <div class="container">
-            <!-- Statistics Card -->
-            <div class="dashboard-card">
-                <h3>All Transcript of Records</h3>
-                <div id="statsLoading" class="loading">Loading statistics...</div>
-                <div id="statsGrid" class="stats-grid" style="display: none;">
-                    <div class="stat-box">
-                        <div class="stat-number" id="pendingCount">0</div>
-                        <div class="stat-label">Pending Requests</div>
+    <div class="main-layout">
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card arriving">
+                        <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
+                        <div class="stat-label">Arriving Today</div>
+                        <div class="stat-number" id="arrivingToday">0</div>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="forReleaseCount">0</div>
-                        <div class="stat-label">Ready for Release</div>
+                    <div class="stat-card departing">
+                        <div class="stat-icon"><i class="fas fa-sign-out-alt"></i></div>
+                        <div class="stat-label">Departing Today</div>
+                        <div class="stat-number" id="departingToday">0</div>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="cancelledCount">0</div>
-                        <div class="stat-label">Cancelled Requests</div>
+                    <div class="stat-card bookings">
+                        <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-label">Bookings Today</div>
+                        <div class="stat-number" id="bookingsToday">0</div>
+                    </div>
+                    <div class="stat-card staying">
+                        <div class="stat-icon"><i class="fas fa-hotel"></i></div>
+                        <div class="stat-label">Currently Staying</div>
+                        <div class="stat-number" id="currentlyStaying">0</div>
+                    </div>
+                </div>
+
+                <!-- Activity Section -->
+                <div class="dashboard-card">
+                    <h3>Today's Activity</h3>
+
+                    <!-- Activity Filters -->
+                    <div class="activity-filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="arriving">Arriving</button>
+                        <button class="filter-btn" data-filter="departing">Departing</button>
+                        <button class="filter-btn" data-filter="staying">Staying</button>
+                    </div>
+
+                    <div id="activityLoading" class="loading">Loading activity logs...</div>
+                    <div id="activityLogsContainer" style="display: none;">
+                        <div class="activity-logs-wrapper">
+                            <table class="activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Guest</th>
+                                        <th>Room</th>
+                                        <th>Check-In Date</th>
+                                        <th>Check-Out Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityLogsBody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Controls for Activity Logs -->
+                        <div id="activityLogsPagination" class="pagination-controls" style="display: none;">
+                            <button id="activityLogsPrevBtn" onclick="previousActivityLogsPage()"
+                                class="pagination-btn">←
+                                Previous</button>
+                            <span id="activityLogsPageInfo" class="pagination-info">Page 1 of 1</span>
+                            <button id="activityLogsNextBtn" onclick="nextActivityLogsPage()"
+                                class="pagination-btn">Next
+                                →</button>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Recent Activity Card -->
-            <div class="dashboard-card">
-                <h3>Recent Activity</h3>
-                <div id="activityLoading" class="loading">Loading activity logs...</div>
-                <div id="activityLogsContainer" style="display: none;">
-                    <div class="activity-logs-wrapper">
-                        <table class="activity-table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Action</th>
-                                    <th>Description</th>
-                                    <th>Date & Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="activityLogsBody">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination Controls for Activity Logs -->
-                    <div id="activityLogsPagination" class="pagination-controls" style="display: none;">
-                        <button id="activityLogsPrevBtn" onclick="previousActivityLogsPage()" class="pagination-btn">←
-                            Previous</button>
-                        <span id="activityLogsPageInfo" class="pagination-info">Page 1 of 1</span>
-                        <button id="activityLogsNextBtn" onclick="nextActivityLogsPage()" class="pagination-btn">Next
-                            →</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/admin-common.js') }}"></script>

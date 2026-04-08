@@ -1,0 +1,811 @@
+/* ========== User Bookings Page Styles ========== */
+
+.booking-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+@media (max-width: 1200px) {
+    .booking-section {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .booking-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+}
+
+.room-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .room-selection {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .room-selection {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-selection {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
+
+.room-card {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.room-card:hover {
+    border-color: #2d7f3d;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.room-card.selected {
+    border-color: #2d7f3d;
+    background-color: #f0f8f5;
+}
+
+.room-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    overflow: hidden;
+    background: linear-gradient(135deg, #d7e8df 0%, #b8d4c2 100%);
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .room-card {
+        border-radius: 6px;
+    }
+
+    .room-image {
+        height: 150px;
+    }
+
+    .room-info {
+        padding: 0.75rem;
+    }
+
+    .room-name {
+        font-size: 1rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .room-capacity {
+        font-size: 0.85rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .room-price {
+        font-size: 0.95rem;
+        margin-top: 0.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-image {
+        height: 120px;
+    }
+
+    .room-info {
+        padding: 0.6rem;
+    }
+
+    .room-name {
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .room-capacity {
+        font-size: 0.8rem;
+    }
+
+    .room-price {
+        font-size: 0.85rem;
+    }
+
+    .room-status-badge {
+        top: 5px;
+        right: 5px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+}
+
+.room-placeholder {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #d7e8df 0%, #b8d4c2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.room-placeholder i {
+    font-size: 3rem;
+    color: #999;
+}
+
+.room-info {
+    padding: 1rem;
+}
+
+.room-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.room-capacity {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.room-price {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d7f3d;
+    margin-top: 0.5rem;
+}
+
+/* ========== Occupied Room Styles ========== */
+.room-card.room-occupied {
+    position: relative;
+    opacity: 0.6;
+    border-color: #999;
+    background-color: #f5f5f5;
+}
+
+.room-card.room-occupied:hover {
+    border-color: #999;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: none;
+}
+
+.room-card.room-occupied .room-name {
+    color: #666;
+}
+
+.room-card.room-occupied .room-price {
+    color: #999;
+}
+
+.room-status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    z-index: 10;
+}
+
+.room-status-badge.occupied {
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+}
+
+.booking-form {
+    background: #f0f8f5;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+@media (max-width: 768px) {
+    .booking-form {
+        padding: 1.5rem;
+        border-radius: 6px;
+    }
+
+    .form-title-booking {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .booking-form {
+        padding: 1rem;
+    }
+
+    .form-title-booking {
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+    border-bottom: 2px solid #2d7f3d;
+    padding-bottom: 0.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-row.full {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-section h3 {
+        font-size: 0.95rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+        padding: 0.6rem;
+    }
+
+    .submit-btn {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-section {
+        margin-bottom: 1rem;
+    }
+
+    .form-section h3 {
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+        padding: 0.5rem;
+    }
+
+    .submit-btn {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #2d7f3d;
+    box-shadow: 0 0 4px rgba(45, 127, 61, 0.2);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-group input[type="date"] {
+    padding: 0.75rem;
+}
+
+.form-group input::placeholder {
+    color: #999;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 0.875rem;
+    background-color: #2d7f3d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: #1f5628;
+}
+
+.submit-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.booking-select-text {
+    padding: 1rem;
+    background-color: #d7e8df;
+    border-radius: 4px;
+    color: #1f5628;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.guest-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.dates-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .guest-info-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .dates-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
+
+.form-title-booking {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+/* ========== Modal Styles ========== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+}
+
+.modal-content.modal-lg {
+    width: 90%;
+    max-width: 700px;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s ease;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+    max-height: calc(90vh - 150px);
+    flex: 1;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+    border-radius: 0 0 8px 8px;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #2d7f3d;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1f5628;
+}
+
+.btn-secondary {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #d0d0d0;
+}
+
+/* Modal responsive design */
+@media (max-width: 768px) {
+    .modal-content.modal-lg {
+        width: 95%;
+        max-width: none;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-header {
+        padding: 1rem 1.5rem;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+
+    .guest-info-grid,
+    .dates-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal {
+        padding: 0;
+    }
+
+    .modal-content.modal-lg {
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-body {
+        padding: 1rem;
+        max-height: calc(100vh - 120px);
+    }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .close-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1.5rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+    }
+}
+
+/* Room Details Styles */
+.room-details {
+    padding: 1rem;
+}
+
+.room-details-image {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.room-details-info {
+    padding: 0;
+}
+
+.room-details-info h3 {
+    color: #2d7f3d;
+    margin-bottom: 1.5rem;
+}
+
+.room-details-info p {
+    margin: 0;
+}
+
+#detailsRoomAmenities {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+#detailsRoomAmenities div {
+    padding: 0.5rem 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .room-details {
+        padding: 0.75rem;
+    }
+
+    .room-details-info h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    #detailsRoomAmenities {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    #detailsRoomAmenities div {
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .success-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .success-icon i {
+        font-size: 2rem;
+    }
+
+    .modal-body.text-center h3 {
+        font-size: 1.2rem;
+    }
+
+    .modal-body.text-center p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Override booking form styles for modal */
+.modal-body .booking-form {
+    background: transparent;
+    padding: 0;
+    border: none;
+}
+
+.modal-body .form-section {
+    margin-bottom: 1.5rem;
+}
+
+.modal-body .form-section:last-of-type {
+    margin-bottom: 1.5rem;
+}
+
+/* ========== Success Modal Styles ========== */
+
+.modal-content.modal-sm {
+    width: 90%;
+    max-width: 400px;
+}
+
+.modal-body.text-center {
+    text-align: center;
+}
+
+.success-icon {
+    margin: 1.5rem 0 1rem;
+    width: 80px;
+    height: 80px;
+    margin-left: auto;
+    margin-right: auto;
+    background: linear-gradient(135deg, #2d7f3d 0%, #1f5628 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-icon i {
+    font-size: 3rem;
+    color: white;
+}
+
+.modal-body.text-center h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 1rem 0 0.5rem;
+    font-weight: 600;
+}
+
+.modal-body.text-center p {
+    color: #666;
+    margin: 0.75rem 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Success modal responsive */
+@media (max-width: 480px) {
+    .modal-content.modal-sm {
+        width: 100%;
+        max-width: none;
+    }
+
+    .success-icon {
+        width: 70px;
+        height: 70px;
+    }
+
+    .success-icon i {
+        font-size: 2.5rem;
+    }
+
+    .modal-body.text-center h3 {
+        font-size: 1.25rem;
+    }
+}

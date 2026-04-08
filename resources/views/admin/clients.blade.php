@@ -14,49 +14,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link active">
-                    <span>Clients</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link active">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -93,7 +83,7 @@
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Contact Number</th>
-                                        <th>Address</th>
+                                        <th>Role</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -166,20 +156,9 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="contactNumber">Contact Number *</label>
-                            <input type="tel" id="contactNumber" name="contact_number" required>
+                            <label for="contactNumber">Contact Number</label>
+                            <input type="tel" id="contactNumber" name="contact_number">
                             <div class="error-message" id="contactNumberError"></div>
-                        </div>
-                    </div>
-
-                    <!-- Address Information Section -->
-                    <div class="form-section-title">Address Information</div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="address">Home Address *</label>
-                            <input type="text" id="address" name="address" required>
-                            <div class="error-message" id="addressError"></div>
                         </div>
                     </div>
                 </div>

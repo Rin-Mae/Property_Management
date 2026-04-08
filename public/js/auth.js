@@ -83,21 +83,20 @@ window.handleRegisterSubmit = async function (event) {
 
     // Clear previous messages
     document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-    document.getElementById('errorAlert').classList.remove('show');
-    document.getElementById('successMessage').classList.remove('show');
+    document.getElementById('errorAlert')?.classList.remove('show');
+    document.getElementById('successMessage')?.classList.remove('show');
 
-    const firstName = document.getElementById('first_name')?.value;
-    const middleName = document.getElementById('middle_name')?.value;
-    const lastName = document.getElementById('last_name')?.value;
-    const suffix = document.getElementById('suffix')?.value;
-    const email = document.getElementById('email')?.value;
-    const studentId = document.getElementById('student_id')?.value;
-    const contactNumber = document.getElementById('contact_number')?.value;
-    const password = document.getElementById('password')?.value;
-    const passwordConfirmation = document.getElementById('password_confirmation')?.value;
+    const firstName = document.getElementById('registerFirstName')?.value;
+    const middleName = document.getElementById('registerMiddleName')?.value;
+    const lastName = document.getElementById('registerLastName')?.value;
+    const suffix = document.getElementById('registerSuffix')?.value;
+    const email = document.getElementById('registerEmail')?.value;
+    const contactNumber = document.getElementById('registerContactNumber')?.value;
+    const password = document.getElementById('registerPassword')?.value;
+    const passwordConfirmation = document.getElementById('registerPasswordConfirm')?.value;
 
     // Basic validation
-    if (!firstName || !lastName || !email || !studentId || !contactNumber || !password || !passwordConfirmation) {
+    if (!firstName || !lastName || !email || !password || !passwordConfirmation) {
         showError('Please fill in all required fields');
         return;
     }
@@ -118,7 +117,6 @@ window.handleRegisterSubmit = async function (event) {
             last_name: lastName,
             suffix,
             email,
-            student_id: studentId,
             contact_number: contactNumber,
             password,
             password_confirmation: passwordConfirmation,

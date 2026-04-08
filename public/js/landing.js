@@ -1,8 +1,18 @@
-// Set up Axios with CSRF token
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-if (csrfToken) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+// Set up Axios with CSRF token - defer until axios is loaded
+function setupAxios() {
+    if (typeof axios === 'undefined') {
+        setTimeout(setupAxios, 100);
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (csrfToken) {
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+    }
 }
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', setupAxios);
 
 // Modal Functions
 function openLoginModal() {
@@ -65,18 +75,25 @@ function handleLoginSubmit(event) {
     event.preventDefault();
     clearLoginErrors();
 
-    const email = document.getElementById('loginEmail').value;
+    const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) {
+        showLoginError('emailError', 'Please fill in all fields');
+        return;
+    }
 
     axios.post('/login', {
         email: email,
         password: password
     })
     .then(response => {
+        console.log('Login successful', response.data);
         // Redirect to dashboard on successful login
         window.location.href = '/dashboard';
     })
     .catch(error => {
+        console.error('Login error:', error);
         if (error.response && error.response.data && error.response.data.errors) {
             const errors = error.response.data.errors;
             if (errors.email) {
@@ -87,6 +104,10 @@ function handleLoginSubmit(event) {
             }
         } else if (error.response && error.response.status === 401) {
             showLoginError('emailError', 'Invalid email or password');
+        } else if (error.response && error.response.status === 422) {
+            showLoginError('emailError', 'Invalid email or password');
+        } else if (error.response && error.response.status === 500) {
+            showLoginError('emailError', 'Server error: ' + (error.response.data?.message || 'Please try again'));
         } else {
             showLoginError('emailError', 'An error occurred. Please try again.');
         }
@@ -98,42 +119,69 @@ function handleRegisterSubmit(event) {
     event.preventDefault();
     clearRegisterErrors();
 
-    const fullName = document.getElementById('registerName').value.trim();
+    const firstName = document.getElementById('registerFirstName').value.trim();
+    const middleName = document.getElementById('registerMiddleName').value.trim();
+    const lastName = document.getElementById('registerLastName').value.trim();
+    const suffix = document.getElementById('registerSuffix').value.trim();
     const email = document.getElementById('registerEmail').value;
+    const contactNumber = document.getElementById('registerContactNumber')?.value.trim() || '';
     const password = document.getElementById('registerPassword').value;
     const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
 
-    // Split full name into first and last name
-    const nameParts = fullName.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || firstName;
+    // Basic validation
+    if (!firstName || !lastName || !email || !password || !passwordConfirm) {
+        showRegisterError('firstNameError', 'Please fill in all required fields');
+        return;
+    }
+
+    if (password !== passwordConfirm) {
+        showRegisterError('confirmPasswordError', 'Passwords do not match');
+        return;
+    }
 
     axios.post('/register', {
         first_name: firstName,
+        middle_name: middleName || null,
         last_name: lastName,
+        suffix: suffix || null,
         email: email,
+        contact_number: contactNumber || null,
         password: password,
-        password_confirmation: passwordConfirm,
-        role: 'user'
+        password_confirmation: passwordConfirm
     })
     .then(response => {
         // Redirect to dashboard on successful registration
         window.location.href = '/dashboard';
     })
     .catch(error => {
+        console.error('Registration error:', error);
         if (error.response && error.response.data && error.response.data.errors) {
             const errors = error.response.data.errors;
-            if (errors.name) {
-                showRegisterError('nameError', errors.name[0]);
+            if (errors.first_name) {
+                showRegisterError('firstNameError', errors.first_name[0]);
+            }
+            if (errors.middle_name) {
+                showRegisterError('middleNameError', errors.middle_name[0]);
+            }
+            if (errors.last_name) {
+                showRegisterError('lastNameError', errors.last_name[0]);
+            }
+            if (errors.suffix) {
+                showRegisterError('suffixError', errors.suffix[0]);
             }
             if (errors.email) {
                 showRegisterError('registerEmailError', errors.email[0]);
             }
+            if (errors.contact_number) {
+                showRegisterError('contactNumberError', errors.contact_number[0]);
+            }
             if (errors.password) {
                 showRegisterError('registerPasswordError', errors.password[0]);
             }
+        } else if (error.response && error.response.status === 500) {
+            showRegisterError('firstNameError', 'Server error: ' + (error.response.data?.message || 'Please try again'));
         } else {
-            showRegisterError('nameError', 'An error occurred. Please try again.');
+            showRegisterError('firstNameError', 'An error occurred. Please try again.');
         }
     });
 }
@@ -155,15 +203,27 @@ function showRegisterError(elementId, message) {
 }
 
 function clearLoginErrors() {
-    document.getElementById('emailError').classList.remove('show');
-    document.getElementById('passwordError').classList.remove('show');
+    const emailError = document.getElementById('emailError');
+    const passwordError = document.getElementById('passwordError');
+    if (emailError) {
+        emailError.classList.remove('show');
+        emailError.textContent = '';
+    }
+    if (passwordError) {
+        passwordError.classList.remove('show');
+        passwordError.textContent = '';
+    }
 }
 
 function clearRegisterErrors() {
-    document.getElementById('nameError').classList.remove('show');
-    document.getElementById('registerEmailError').classList.remove('show');
-    document.getElementById('registerPasswordError').classList.remove('show');
-    document.getElementById('confirmPasswordError').classList.remove('show');
+    const errorIds = ['firstNameError', 'middleNameError', 'lastNameError', 'suffixError', 'registerEmailError', 'contactNumberError', 'registerPasswordError', 'confirmPasswordError'];
+    errorIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.classList.remove('show');
+            element.textContent = '';
+        }
+    });
 }
 
 // Hamburger menu toggle

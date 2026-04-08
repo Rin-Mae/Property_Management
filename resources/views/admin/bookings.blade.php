@@ -15,49 +15,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link active">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -130,36 +120,6 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('viewBookingModal')">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Update Status Modal -->
-    <div id="updateStatusModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Update Booking Status</h2>
-                <button class="modal-close" onclick="closeModal('updateStatusModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="statusForm">
-                    <input type="hidden" id="bookingId">
-                    <div class="form-group">
-                        <label for="newStatus">New Status:</label>
-                        <select id="newStatus" required>
-                            <option value="">Select Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Approved</option>
-                            <option value="checked_in">Checked In</option>
-                            <option value="checked_out">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('updateStatusModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="updateBookingStatus()">Update</button>
             </div>
         </div>
     </div>

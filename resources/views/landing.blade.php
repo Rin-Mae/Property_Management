@@ -23,6 +23,7 @@
                 <a href="#features">Features</a>
                 <a href="#rooms">Rooms</a>
                 <a href="#amenities">Amenities</a>
+                <a href="#about">About</a>
                 <a href="#contact">Contact</a>
                 <button class="btn-login" onclick="openLoginModal()">Login</button>
             </div>
@@ -118,7 +119,10 @@
 
             <div class="rooms-grid">
                 <div class="room-card">
-                    <div class="room-image single-room"></div>
+                    <div class="room-image single-room">
+                        <img src="{{ asset('images/standard/1000481934.jpg') }}" alt="Standard Room"
+                            class="room-image-img">
+                    </div>
                     <div class="room-info">
                         <h3>Standard Room</h3>
                         <p>Perfect for single travelers and short stays with essential amenities.</p>
@@ -131,7 +135,9 @@
                 </div>
 
                 <div class="room-card">
-                    <div class="room-image deluxe-room"></div>
+                    <div class="room-image deluxe-room">
+                        <img src="{{ asset('images/deluxe/1000481935.jpg') }}" alt="Deluxe Room" class="room-image-img">
+                    </div>
                     <div class="room-info">
                         <h3>Deluxe Room</h3>
                         <p>Spacious rooms with premium furnishings and modern conveniences.</p>
@@ -211,6 +217,81 @@
         </div>
     </section>
 
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2>About Us</h2>
+            <p class="section-subtitle">Meet the visionary leadership and talented team behind this innovative system
+            </p>
+
+            <!-- Dean Section -->
+            <div class="about-subsection dean-section">
+                <h3>Dean of Bachelor of Information Technology</h3>
+                <div class="dean-content">
+                    <div class="dean-image">
+                        <img src="{{ asset('images/dean1.jpg') }}" alt="Dean" class="about-image">
+                    </div>
+                    <div class="dean-intro">
+                        <p>Ma’am Loida Hermosura a dedicated and passionate educator known for her commitment to
+                            academic excellence and student development. With years of experience in teaching and
+                            guiding learners, she has consistently inspired students to reach their full potential
+                            through her supportive and engaging approach.</p>
+                        <p>Her expertise, combined with her genuine care for her students’ growth, makes her a respected
+                            figure in the academic community. Ma’am Hermosura continues to play a vital role in shaping
+                            future professionals by fostering a learning environment built on discipline, knowledge, and
+                            integrity.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developers Team Section -->
+            <div class="about-subsection team-section">
+                <h3>Our Development Team</h3>
+                <div class="team-image-container">
+                    <img src="{{ asset('images/image1.jpg') }}" alt="Development Team Member 1"
+                        class="about-image-full">
+                    <img src="{{ asset('images/image2.jpg') }}" alt="Development Team Member 2"
+                        class="about-image-full">
+                    <img src="{{ asset('images/HmDean.jpg') }}" alt="HM Dean" class="about-image-full">
+                </div>
+            </div>
+
+            <!-- About Area Section -->
+            <div class="about-subsection about-area-section">
+                <h3>Why We Built This System</h3>
+                <div class="about-area-content">
+                    <div class="about-area-text">
+                        <h4>Our Mission</h4>
+                        <p>We recognized the need for a comprehensive, user-friendly hotel property management system
+                            that could streamline operations for modern hospitality businesses. Our goal was to create a
+                            solution that simplifies complex booking processes, enhances guest experiences, and provides
+                            hotel managers with powerful tools for efficient property management.</p>
+                    </div>
+                    <div class="about-area-text">
+                        <h4>Who It Serves</h4>
+                        <p>This system is designed for:</p>
+                        <ul class="about-list">
+                            <li><strong>Hotel Managers:</strong> To efficiently manage room inventory, reservations, and
+                                guest relations</li>
+                            <li><strong>Admin Staff:</strong> To oversee operations, handle bookings, and manage
+                                maintenance schedules</li>
+                            <li><strong>Guests:</strong> To enjoy seamless booking experiences and personalized service
+                            </li>
+                            <li><strong>Educational Institutions:</strong> As a learning platform for hospitality and
+                                information technology students</li>
+                        </ul>
+                    </div>
+                    <div class="about-area-text">
+                        <h4>Our Commitment</h4>
+                        <p>We are committed to providing a reliable, scalable, and innovative platform that sets the
+                            standard for hotel property management systems. Through continuous improvement and user
+                            feedback, we strive to deliver excellence in every aspect of our service.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="cta">
         <div class="container">
@@ -285,6 +366,7 @@
                         <li><a href="#features">Features</a></li>
                         <li><a href="#rooms">Rooms</a></li>
                         <li><a href="#amenities">Amenities</a></li>
+                        <li><a href="#about">About</a></li>
                         <li><a href="#contact">Contact</a></li>
                     </ul>
                 </div>
@@ -352,28 +434,60 @@
             </div>
             <form id="registerForm" onsubmit="handleRegisterSubmit(event)">
                 @csrf
-                <div class="form-group">
-                    <label for="registerName">Full Name</label>
-                    <input type="text" id="registerName" name="name" required>
-                    <div class="error-message" id="nameError"></div>
+                <div class="form-row">
+                    <div class="form-group form-col-2-1">
+                        <label for="registerFirstName">First Name *</label>
+                        <input type="text" id="registerFirstName" name="first_name" required>
+                        <div class="error-message" id="firstNameError"></div>
+                    </div>
+
+                    <div class="form-group form-col-2-2">
+                        <label for="registerMiddleName">Middle Name</label>
+                        <input type="text" id="registerMiddleName" name="middle_name">
+                        <div class="error-message" id="middleNameError"></div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="registerEmail">Email Address</label>
-                    <input type="email" id="registerEmail" name="email" required>
-                    <div class="error-message" id="registerEmailError"></div>
+                <div class="form-row">
+                    <div class="form-group form-col-2-1">
+                        <label for="registerLastName">Last Name *</label>
+                        <input type="text" id="registerLastName" name="last_name" required>
+                        <div class="error-message" id="lastNameError"></div>
+                    </div>
+
+                    <div class="form-group form-col-2-2">
+                        <label for="registerSuffix">Suffix</label>
+                        <input type="text" id="registerSuffix" name="suffix" placeholder="e.g. Jr., Sr., III">
+                        <div class="error-message" id="suffixError"></div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="registerPassword">Password</label>
-                    <input type="password" id="registerPassword" name="password" required>
-                    <div class="error-message" id="registerPasswordError"></div>
+                <div class="form-row">
+                    <div class="form-group form-col-2-1">
+                        <label for="registerEmail">Email Address *</label>
+                        <input type="email" id="registerEmail" name="email" required>
+                        <div class="error-message" id="registerEmailError"></div>
+                    </div>
+
+                    <div class="form-group form-col-2-2">
+                        <label for="registerContactNumber">Contact Number</label>
+                        <input type="tel" id="registerContactNumber" name="contact_number" placeholder="Optional">
+                        <div class="error-message" id="contactNumberError"></div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="registerPasswordConfirm">Confirm Password</label>
-                    <input type="password" id="registerPasswordConfirm" name="password_confirmation" required>
-                    <div class="error-message" id="confirmPasswordError"></div>
+                <div class="form-row">
+                    <div class="form-group form-col-2-1">
+                        <label for="registerPassword">Password *</label>
+                        <input type="password" id="registerPassword" name="password" required>
+                        <div class="error-message" id="registerPasswordError"></div>
+                    </div>
+
+                    <div class="form-group form-col-2-2">
+                        <label for="registerPasswordConfirm">Confirm Password *</label>
+                        <input type="password" id="registerPasswordConfirm" name="password_confirmation" required>
+                        <div class="error-message" id="confirmPasswordError"></div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>

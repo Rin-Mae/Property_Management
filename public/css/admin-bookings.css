@@ -30,8 +30,8 @@
 
 .search-input:focus {
     outline: none;
-    border-color: #6b4423;
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    border-color: #0f6b0f;
+    box-shadow: 0 0 0 3px rgba(15, 107, 15, 0.1);
 }
 
 .search-bar i {
@@ -44,7 +44,7 @@
 
 /* Bookings Card */
 .bookings-card {
-    background: #f5ede8;
+    background: #e8f5e9;
     border-radius: 12px;
     padding: 2rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -57,7 +57,7 @@
     gap: 1.5rem;
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(107, 68, 35, 0.15);
+    border-bottom: 1px solid rgba(15, 107, 15, 0.15);
     flex-wrap: wrap;
 }
 
@@ -80,13 +80,13 @@
 }
 
 .status-select:hover {
-    border-color: #6b4423;
+    border-color: #0f6b0f;
 }
 
 .status-select:focus {
     outline: none;
-    border-color: #6b4423;
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    border-color: #0f6b0f;
+    box-shadow: 0 0 0 3px rgba(15, 107, 15, 0.1);
 }
 
 /* Table Wrapper */
@@ -104,7 +104,7 @@
 }
 
 .bookings-table thead {
-    background: #e8d8c8;
+    background: #c8e6c9;
     color: #333;
 }
 
@@ -266,7 +266,7 @@
 }
 
 .pagination-btn {
-    background: #6b4423;
+    background: #0f6b0f;
     color: white;
     border: none;
     padding: 0.5rem 1rem;
@@ -278,7 +278,7 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-    background: #5a3a1f;
+    background: #0a4d0a;
     transform: translateY(-2px);
 }
 
@@ -345,7 +345,7 @@
 }
 
 .modal-header {
-    background: linear-gradient(135deg, #6b4423 0%, #8b5a3c 100%);
+    background: linear-gradient(135deg, #0f6b0f 0%, #2d8a2d 100%);
     color: white;
     padding: 1.5rem;
     display: flex;
@@ -420,8 +420,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #6b4423;
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    border-color: #0f6b0f;
+    box-shadow: 0 0 0 3px rgba(15, 107, 15, 0.1);
 }
 
 .form-group textarea {
@@ -441,12 +441,12 @@
 }
 
 .btn-primary {
-    background: #6b4423;
+    background: #0f6b0f;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #5a3a1f;
+    background: #0a4d0a;
     transform: translateY(-2px);
 }
 

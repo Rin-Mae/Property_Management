@@ -16,14 +16,14 @@ let userManagementState = {
  */
 async function loadUsers() {
     try {
-        const usersLoading = document.getElementById('usersLoading');
-        const usersContainer = document.getElementById('usersContainer');
+        const combinedLoading = document.getElementById('combinedLoading');
+        const combinedContainer = document.getElementById('combinedContainer');
 
-        if (usersLoading) {
-            usersLoading.style.display = 'block';
+        if (combinedLoading) {
+            combinedLoading.style.display = 'block';
         }
-        if (usersContainer) {
-            usersContainer.style.display = 'none';
+        if (combinedContainer) {
+            combinedContainer.style.display = 'none';
         }
 
         // API call to get users
@@ -33,15 +33,46 @@ async function loadUsers() {
 
         applyFilters();
 
-        if (usersLoading) {
-            usersLoading.style.display = 'none';
+        if (combinedLoading) {
+            combinedLoading.style.display = 'none';
         }
-        if (usersContainer) {
-            usersContainer.style.display = 'block';
+        if (combinedContainer) {
+            combinedContainer.style.display = 'block';
         }
     } catch (error) {
         console.error('Error loading users:', error);
         showAlert('Failed to load users', 'error');
+    }
+}
+
+/**
+ * Show modal loader
+ */
+function showModalLoader(message = 'Processing...') {
+    let loader = document.getElementById('userModalLoader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'userModalLoader';
+        loader.className = 'modal-loader-overlay';
+        document.body.appendChild(loader);
+    }
+    
+    loader.innerHTML = `
+        <div class="modal-loader-content">
+            <div class="spinner"></div>
+            <p>${message}</p>
+        </div>
+    `;
+    loader.style.display = 'flex';
+}
+
+/**
+ * Hide modal loader
+ */
+function hideModalLoader() {
+    const loader = document.getElementById('userModalLoader');
+    if (loader) {
+        loader.style.display = 'none';
     }
 }
 
@@ -77,7 +108,7 @@ function applyFilters() {
  * Update users table display
  */
 function updateUsersTable() {
-    const tbody = document.getElementById('usersTableBody');
+    const tbody = document.getElementById('combinedTableBody');
     if (!tbody) return;
 
     tbody.innerHTML = '';
@@ -88,7 +119,7 @@ function updateUsersTable() {
 
     if (paginatedUsers.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No users found</td></tr>';
-        document.getElementById('usersPagination').style.display = 'none';
+        document.getElementById('combinedPagination').style.display = 'none';
         return;
     }
 
@@ -126,10 +157,10 @@ function updateUsersTable() {
  * Update pagination controls
  */
 function updatePaginationControls() {
-    const pageInfo = document.getElementById('usersPageInfo');
-    const prevBtn = document.getElementById('usersPrevBtn');
-    const nextBtn = document.getElementById('usersNextBtn');
-    const pagination = document.getElementById('usersPagination');
+    const pageInfo = document.getElementById('combinedPageInfo');
+    const prevBtn = document.getElementById('combinedPrevBtn');
+    const nextBtn = document.getElementById('combinedNextBtn');
+    const pagination = document.getElementById('combinedPagination');
 
     if (userManagementState.totalPages > 1) {
         if (pagination) {
@@ -185,6 +216,17 @@ function openCreateUserModal() {
     document.getElementById('userId').value = '';
     clearFormErrors();
     
+    // Set role to admin automatically for creation
+    const roleField = document.getElementById('role');
+    const roleHiddenField = document.getElementById('roleHidden');
+    if (roleField) {
+        roleField.value = 'admin';
+        roleField.disabled = true;
+    }
+    if (roleHiddenField) {
+        roleHiddenField.value = '';
+    }
+    
     // Make password required for new users
     const passwordField = document.getElementById('password');
     const passwordConfirmField = document.getElementById('passwordConfirm');
@@ -222,6 +264,16 @@ async function openEditUserModal(userId) {
         document.getElementById('passwordConfirm').value = '';
 
         clearFormErrors();
+        
+        // Disable role field in edit mode and set hidden field with the role value
+        const roleField = document.getElementById('role');
+        const roleHiddenField = document.getElementById('roleHidden');
+        if (roleField) {
+            roleField.disabled = true;
+        }
+        if (roleHiddenField) {
+            roleHiddenField.value = user.role || '';
+        }
         
         // Make password optional for edits
         const passwordField = document.getElementById('password');
@@ -264,20 +316,12 @@ async function handleUserSubmit(event) {
         last_name: document.getElementById('lastName').value,
         suffix: document.getElementById('suffix').value,
         email: document.getElementById('email').value,
-        role: document.getElementById('role').value,
+        role: isCreateMode ? 'admin' : (document.getElementById('roleHidden').value || document.getElementById('role').value),
         contact_number: document.getElementById('contactNumber').value,
     };
 
     const password = document.getElementById('password').value;
     const passwordConfirm = document.getElementById('passwordConfirm').value;
-
-    // Validate role - cannot create user role
-    if (formData.role === 'user') {
-        showAlert('Cannot create users with the "User" role', 'error');
-        document.getElementById('roleError').textContent = 'User role is not available for creation';
-        document.getElementById('roleError').classList.add('show');
-        return;
-    }
 
     // Password validation
     if (isCreateMode) {
@@ -320,7 +364,7 @@ async function handleUserSubmit(event) {
     const submitBtn = event.target.querySelector('#submitBtn');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Processing...';
+    showModalLoader('Saving user...');
 
     try {
         let response;
@@ -334,9 +378,11 @@ async function handleUserSubmit(event) {
             showAlert('User created successfully', 'success');
         }
 
+        hideModalLoader();
         closeUserModal();
         loadUsers();
     } catch (error) {
+        hideModalLoader();
         console.error('Error submitting form:', error);
         console.error('Error response:', error.response);
         

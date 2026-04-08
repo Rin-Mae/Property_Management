@@ -132,6 +132,25 @@
     color: #721c24;
 }
 
+/* ========== Type Badge ========== */
+.type-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.type-badge.user {
+    background: #e7f3ff;
+    color: #0056b3;
+}
+
+.type-badge.client {
+    background: #fff3e0;
+    color: #e65100;
+}
+
 /* ========== Action Buttons ========== */
 .action-buttons {
     display: flex;
@@ -153,11 +172,11 @@
 
 .btn-icon.edit {
     color: #007a0f;
-    background: rgba(139, 111, 71, 0.1);
+    background: rgba(15, 107, 15, 0.1);
 }
 
 .btn-icon.edit:hover {
-    background: rgba(139, 111, 71, 0.2);
+    background: rgba(15, 107, 15, 0.2);
 }
 
 .btn-icon.delete {

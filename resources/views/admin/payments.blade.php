@@ -15,49 +15,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link active">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -92,14 +82,14 @@
                         <table class="payments-table">
                             <thead>
                                 <tr>
-                                    <th>Payment ID</th>
+                                    <th>Reference No.</th>
                                     <th>Guest Name</th>
-                                    <th>Booking Ref No.</th>
                                     <th>Room</th>
                                     <th>Amount</th>
-                                    <th>Method</th>
-                                    <th>Date</th>
+                                    <th>Payment Method</th>
+                                    <th>Submitted Date</th>
                                     <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="paymentsTableBody">
@@ -122,61 +112,76 @@
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Payment Details</h2>
+                <h2>Verify Payment</h2>
                 <button class="modal-close" onclick="closePaymentModal()">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="modal-section">
-                    <div class="modal-row">
-                        <div class="modal-field">
-                            <label>Full Name:</label>
-                            <p id="modalGuestName"></p>
-                        </div>
-                    </div>
-                    <div class="modal-row">
-                        <div class="modal-field">
-                            <label>Booking Ref No:</label>
-                            <p id="modalBookingRef"></p>
-                        </div>
-                    </div>
-                    <div class="modal-row">
-                        <div class="modal-field">
-                            <label>Room:</label>
-                            <p id="modalRoom"></p>
-                        </div>
-                    </div>
-                    <div class="modal-row">
-                        <div class="modal-field">
-                            <label>Amount Paid:</label>
-                            <p id="modalAmount"></p>
-                        </div>
-                    </div>
-                    <div class="modal-row">
-                        <div class="modal-field">
-                            <label>Payment Method:</label>
-                            <p id="modalMethod"></p>
-                        </div>
-                    </div>
-                    <div class="modal-row">
-                        <div class="modal-field">
-                            <label>Date of Payment:</label>
-                            <p id="modalDate"></p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="modal-receipt">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 280'%3E%3Crect fill='%23f5f5f5' width='200' height='280'/%3E%3Ctext x='100' y='40' font-size='16' font-weight='bold' text-anchor='middle' fill='%23333'%3ERECEIPT%3C/text%3E%3Cline x1='20' y1='50' x2='180' y2='50' stroke='%23ddd' stroke-width='1'/%3E%3Ctext x='100' y='80' font-size='12' text-anchor='middle' fill='%23666'%3EPayment Confirmation%3C/text%3E%3Ctext x='100' y='110' font-size='14' font-weight='bold' text-anchor='middle' fill='%23333' id='receiptAmount'%3E₱0.00%3C/text%3E%3Ctext x='100' y='140' font-size='10' text-anchor='middle' fill='%23999'%3EThank You%3C/text%3E%3C/svg%3E"
-                        alt="Receipt" class="receipt-image">
+            <!-- Payment Proof Section (Prominent) -->
+            <div class="modal-proof-section">
+                <h3>Payment Proof</h3>
+                <div class="proof-container">
+                    <img id="proofImage" src="" alt="Payment Proof" style="display:none;" class="proof-image"
+                        loading="lazy">
+                    <p id="noProof" style="text-align: center; color: #999; margin: 0;">No payment proof uploaded</p>
                 </div>
             </div>
 
+            <!-- Payment Details Grid -->
+            <div class="modal-body">
+                <div class="verification-grid">
+                    <div class="verification-card">
+                        <h4>Booking Information</h4>
+                        <div class="info-row">
+                            <span class="label">Reference No:</span>
+                            <span class="value" id="modalBookingRef">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Guest Name:</span>
+                            <span class="value" id="modalGuestName">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Room:</span>
+                            <span class="value" id="modalRoom">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Check-in:</span>
+                            <span class="value" id="modalCheckIn">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Check-out:</span>
+                            <span class="value" id="modalCheckOut">-</span>
+                        </div>
+                    </div>
+
+                    <div class="verification-card">
+                        <h4>Payment Information</h4>
+                        <div class="info-row highlight">
+                            <span class="label">Amount:</span>
+                            <span class="value amount" id="modalAmount">₱0.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Payment Method:</span>
+                            <span class="value" id="modalMethod">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Payment Date:</span>
+                            <span class="value" id="modalDate">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Status:</span>
+                            <span class="value" id="modalPaymentStatus">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
             <div class="modal-footer" id="modalFooter">
-                <button class="btn-approve" onclick="approvePayment()">
-                    <i class="fas fa-check"></i> Approve
-                </button>
                 <button class="btn-reject" onclick="rejectPayment()">
-                    <i class="fas fa-times"></i> Reject
+                    <i class="fas fa-times-circle"></i> Reject Payment
+                </button>
+                <button class="btn-approve" onclick="approvePayment()">
+                    <i class="fas fa-check-circle"></i> Approve Payment
                 </button>
             </div>
         </div>

@@ -43,7 +43,7 @@ class RegisterController extends Controller
             'password' => Hash::make($validated['password']),
             'student_id' => $validated['student_id'] ?? null,
             'contact_number' => $validated['contact_number'] ?? null,
-            'role' => 'user', // Default role for new registrations
+            'role' => 'client', // Default role for new registrations (must be 'admin' or 'client')
         ]);
 
         // Log the user in for session

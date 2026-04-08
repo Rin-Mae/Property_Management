@@ -15,49 +15,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link active">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -148,12 +138,23 @@
                                     <th>Dates</th>
                                     <th>Amount</th>
                                     <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="bookingsTableBody">
                                 <!-- Data will be populated by JavaScript -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div id="bookingsPagination" class="pagination-controls" style="display: none;">
+                        <button id="bookingsPrevBtn" onclick="previousBookingsPage()" class="pagination-btn">←
+                            Previous</button>
+                        <div id="bookingsPageNumbers" class="page-numbers">
+                        </div>
+                        <span id="bookingsPageInfo" class="pagination-info">Page 1 of 1</span>
+                        <button id="bookingsNextBtn" onclick="nextBookingsPage()" class="pagination-btn">Next →</button>
                     </div>
                 </div>
             </div>

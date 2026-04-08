@@ -5,17 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     /**
-     * Get all users
+     * Get all users (admin and client roles)
      */
     public function index()
     {
         try {
-            $users = User::all();
+            $users = User::whereIn('role', ['admin', 'client'])
+                ->orderBy('created_at', 'desc')
+                ->get();
             return response()->json($users);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to load users'], 500);
@@ -50,16 +54,9 @@ class UserController extends Controller
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:8|confirmed',
                 'password_confirmation' => 'required|string',
-                'role' => 'required|in:admin,housekeeper',
+                'role' => 'required|in:admin,client',
                 'contact_number' => 'nullable|string|max:20',
             ]);
-
-            // Prevent creating users with 'user' role
-            if ($validated['role'] === 'user') {
-                return response()->json([
-                    'errors' => ['role' => ['Cannot create users with the user role']]
-                ], 422);
-            }
 
             // Remove password_confirmation from validated data (it's only for validation)
             unset($validated['password_confirmation']);
@@ -74,7 +71,7 @@ class UserController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error('User creation error: ' . $e->getMessage(), ['exception' => $e, 'request' => $request->all()]);
+            Log::error('User creation error: ' . $e->getMessage(), ['exception' => $e, 'request' => $request->all()]);
             return response()->json(['error' => 'Failed to create user: ' . $e->getMessage()], 500);
         }
     }
@@ -94,7 +91,7 @@ class UserController extends Controller
                 'last_name' => 'required|string|max:255',
                 'suffix' => 'nullable|string|max:255',
                 'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($id)],
-                'role' => 'required|in:admin,housekeeper,user',
+                'role' => 'required|in:admin,client',
                 'contact_number' => 'nullable|string|max:20',
             ];
 
@@ -122,8 +119,74 @@ class UserController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error('User update error: ' . $e->getMessage(), ['user_id' => $id, 'exception' => $e]);
+            Log::error('User update error: ' . $e->getMessage(), ['user_id' => $id, 'exception' => $e]);
             return response()->json(['error' => 'Failed to update user: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get authenticated user profile
+     */
+    public function showProfile()
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Not authenticated'], 401);
+            }
+            return response()->json($user);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to load profile'], 500);
+        }
+    }
+
+    /**
+     * Update authenticated user profile
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Not authenticated'], 401);
+            }
+
+            // Validate input
+            $rules = [
+                'first_name' => 'required|string|max:255',
+                'middle_name' => 'nullable|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'suffix' => 'nullable|string|max:255',
+                'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+                'contact_number' => 'nullable|string|max:20',
+            ];
+
+            // Only require password confirmation if password is provided
+            if ($request->filled('password')) {
+                $rules['password'] = 'required|string|min:8|confirmed';
+                $rules['password_confirmation'] = 'required|string';
+            }
+
+            $validated = $request->validate($rules);
+
+            // Remove password and password_confirmation if not provided
+            if (!$request->filled('password')) {
+                unset($validated['password']);
+                unset($validated['password_confirmation']);
+            } else {
+                $validated['password'] = Hash::make($validated['password']);
+                unset($validated['password_confirmation']);
+            }
+
+            // Update user
+            $user->update($validated);
+
+            return response()->json(['message' => 'Profile updated successfully', 'user' => $user]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            Log::error('Profile update error: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['error' => 'Failed to update profile: ' . $e->getMessage()], 500);
         }
     }
 

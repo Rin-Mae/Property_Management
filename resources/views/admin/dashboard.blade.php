@@ -14,49 +14,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link active">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -96,6 +86,39 @@
                     </div>
                 </div>
 
+                <!-- Calendar Section -->
+                <div class="dashboard-card">
+                    <h3>Booking Calendar</h3>
+                    <div class="calendar-container">
+                        <div class="calendar-controls">
+                            <button onclick="previousMonth()" class="calendar-btn">← Previous</button>
+                            <h4 id="currentMonthYear">April 2026</h4>
+                            <button onclick="nextMonth()" class="calendar-btn">Next →</button>
+                        </div>
+                        <div class="calendar-wrapper">
+                            <div class="calendar-header">
+                                <div class="calendar-weekday">Sun</div>
+                                <div class="calendar-weekday">Mon</div>
+                                <div class="calendar-weekday">Tue</div>
+                                <div class="calendar-weekday">Wed</div>
+                                <div class="calendar-weekday">Thu</div>
+                                <div class="calendar-weekday">Fri</div>
+                                <div class="calendar-weekday">Sat</div>
+                            </div>
+                            <div class="calendar-grid" id="calendarGrid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Details Section -->
+                <div class="dashboard-card" id="calendarDetailsSection" style="display: none;">
+                    <h3>Bookings for <span id="selectedDateDisplay">Selected Date</span></h3>
+                    <div id="calendarBookingsContainer">
+                        <div class="loading">Loading bookings...</div>
+                    </div>
+                </div>
+
                 <!-- Activity Section -->
                 <div class="dashboard-card">
                     <h3>Today's Activity</h3>
@@ -130,12 +153,12 @@
                         <!-- Pagination Controls for Activity Logs -->
                         <div id="activityLogsPagination" class="pagination-controls" style="display: none;">
                             <button id="activityLogsPrevBtn" onclick="previousActivityLogsPage()"
-                                class="pagination-btn">←
-                                Previous</button>
+                                class="pagination-btn">← Previous</button>
+                            <div id="activityLogsPageNumbers" class="page-numbers">
+                            </div>
                             <span id="activityLogsPageInfo" class="pagination-info">Page 1 of 1</span>
                             <button id="activityLogsNextBtn" onclick="nextActivityLogsPage()"
-                                class="pagination-btn">Next
-                                →</button>
+                                class="pagination-btn">Next →</button>
                         </div>
                     </div>
                 </div>

@@ -21,30 +21,22 @@ function setupEventListeners() {
 
 // Load Bookings
 function loadBookings() {
-    showLoading();
+    showLoader('Loading bookings...');
 
-    // Get user credentials from localStorage
-    const authToken = localStorage.getItem('auth_token');
-    const userId = localStorage.getItem('user_id');
-    const userName = localStorage.getItem('user_name');
+    // Load user info from API
+    loadUserInfo();
 
-    document.getElementById('profileName').textContent = userName || 'Admin';
-    document.getElementById('userInfo').textContent = 'Administrator';
-
-    // Fetch bookings from API
-    axios.get('/api/bookings', {
-        headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Accept': 'application/json'
-        }
-    })
+    // Fetch bookings from API using axios with CSRF token
+    axios.get('/api/bookings')
     .then(response => {
         allBookings = response.data.data || response.data;
         filteredBookings = [...allBookings];
         displayBookings();
+        hideLoader();
     })
     .catch(error => {
         console.error('Error loading bookings:', error);
+        hideLoader();
         document.getElementById('bookingsTableBody').innerHTML = `
             <tr>
                 <td colspan="7" class="loading-text">
@@ -53,6 +45,21 @@ function loadBookings() {
             </tr>
         `;
     });
+}
+
+// Load user info
+async function loadUserInfo() {
+    try {
+        const response = await fetch('/api/user');
+        const data = await response.json();
+
+        if (response.ok && data) {
+            document.getElementById('profileName').textContent = data.name || 'Admin';
+            document.getElementById('userInfo').textContent = data.role || 'Administrator';
+        }
+    } catch (error) {
+        console.error('Error loading user info:', error);
+    }
 }
 
 
@@ -146,21 +153,17 @@ function getActionButtons(booking) {
 
     if (booking.status === 'pending') {
         buttons += `
-            <button class="btn-action btn-approve" onclick="openUpdateStatusModal(${booking.reservation_id})">Approve</button>
+            <button class="btn-action btn-approve" onclick="updateBookingStatusDirect(${booking.reservation_id}, 'confirmed')">Approve</button>
+            <button class="btn-action btn-reject" onclick="updateBookingStatusDirect(${booking.reservation_id}, 'cancelled')">Reject</button>
         `;
     } else if (booking.status === 'confirmed') {
         buttons += `
-            <button class="btn-action btn-approve" onclick="openUpdateStatusModal(${booking.reservation_id})">Check In</button>
+            <button class="btn-action btn-approve" onclick="updateBookingStatusDirect(${booking.reservation_id}, 'checked_in')">Check In</button>
+            <button class="btn-action btn-reject" onclick="updateBookingStatusDirect(${booking.reservation_id}, 'cancelled')">Reject</button>
         `;
     } else if (booking.status === 'checked_in') {
         buttons += `
-            <button class="btn-action btn-approve" onclick="openUpdateStatusModal(${booking.reservation_id})">Check Out</button>
-        `;
-    }
-
-    if (booking.status === 'pending' || booking.status === 'confirmed') {
-        buttons += `
-            <button class="btn-action btn-reject" onclick="cancelBooking(${booking.reservation_id})">Reject</button>
+            <button class="btn-action btn-approve" onclick="updateBookingStatusDirect(${booking.reservation_id}, 'checked_out')">Check Out</button>
         `;
     }
 
@@ -214,10 +217,6 @@ function viewBooking(bookingId) {
                 <span class="detail-label">Total Price</span>
                 <span class="detail-value">₱${booking.total_price.toLocaleString()}</span>
             </div>
-            <div class="detail-item full-width">
-                <span class="detail-label">Notes</span>
-                <span class="detail-value">${booking.notes || 'No notes'}</span>
-            </div>
         </div>
     `;
 
@@ -225,44 +224,39 @@ function viewBooking(bookingId) {
     openModal('viewBookingModal');
 }
 
-// Open Update Status Modal
-function openUpdateStatusModal(bookingId) {
-    const booking = allBookings.find(b => b.reservation_id === bookingId);
-    if (!booking) return;
+// Update Booking Status Directly
+async function updateBookingStatusDirect(bookingId, newStatus) {
+    showLoader('Updating booking status...');
+    try {
+        const response = await axios.patch(`/api/bookings/${bookingId}/status`, {
+            status: newStatus
+        });
 
-    document.getElementById('bookingId').value = bookingId;
-    document.getElementById('newStatus').value = booking.status;
-    openModal('updateStatusModal');
-}
-
-// Update Booking Status
-function updateBookingStatus() {
-    const bookingId = parseInt(document.getElementById('bookingId').value);
-    const newStatus = document.getElementById('newStatus').value;
-
-    if (!newStatus) {
-        alert('Please select a status');
-        return;
-    }
-
-    const booking = allBookings.find(b => b.reservation_id === bookingId);
-    if (booking) {
-        booking.status = newStatus;
-        filterBookings();
-        closeModal('updateStatusModal');
-        alert('Booking status updated successfully!');
-    }
-}
-
-// Cancel Booking
-function cancelBooking(bookingId) {
-    if (confirm('Are you sure you want to reject this booking?')) {
+        // Update local state
         const booking = allBookings.find(b => b.reservation_id === bookingId);
         if (booking) {
-            booking.status = 'cancelled';
+            booking.status = newStatus;
             filterBookings();
-            alert('Booking rejected successfully!');
         }
+        
+        // Show success message based on status
+        let message = 'Booking updated successfully!';
+        if (newStatus === 'confirmed') {
+            message = 'Booking approved successfully!';
+        } else if (newStatus === 'checked_in') {
+            message = 'Guest checked in successfully!';
+        } else if (newStatus === 'checked_out') {
+            message = 'Guest checked out successfully!';
+        } else if (newStatus === 'cancelled') {
+            message = 'Booking rejected successfully!';
+        }
+        
+        hideLoader();
+        showModalAlert(message, 'success');
+    } catch (error) {
+        hideLoader();
+        console.error('Error updating booking status:', error);
+        showModalAlert('Failed to update booking status: ' + (error.response?.data?.message || error.message), 'error');
     }
 }
 

@@ -17,6 +17,17 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Session\Middleware\StartSession::class,
         ]);
+        
+        // Register middleware aliases
+        $middleware->alias([
+            'auth.api' => \App\Http\Middleware\AuthApi::class,
+        ]);
+        
+        // Remove CSRF from register and login routes
+        $middleware->validateCsrfTokens(except: [
+            'register',
+            'login',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

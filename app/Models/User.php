@@ -53,14 +53,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the TOR requests for this user
-     */
-    public function torRequests()
-    {
-        return $this->hasMany(TORRequest::class);
-    }
-
-    /**
      * Get the full name of the user
      */
     public function getFullNameAttribute()

@@ -11,7 +11,13 @@ let bookingsChart = null;
 let reportsState = {
     fromDate: null,
     toDate: null,
-    filter: 'all'
+    filter: 'all',
+    bookings: {
+        data: [],
+        currentPage: 1,
+        totalPages: 1,
+        perPage: 5
+    }
 };
 
 // ============================================
@@ -25,6 +31,35 @@ document.addEventListener('DOMContentLoaded', function () {
     loadBookingsChart();
     loadBookingsTable();
 });
+
+// ============================================
+// LOADER FUNCTIONS
+// ============================================
+
+function showReportLoader(message = 'Loading...') {
+    let loader = document.getElementById('reportLoader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'reportLoader';
+        loader.className = 'modal-loader-overlay';
+        document.body.appendChild(loader);
+    }
+    
+    loader.innerHTML = `
+        <div class="modal-loader-content">
+            <div class="spinner"></div>
+            <p>${message}</p>
+        </div>
+    `;
+    loader.style.display = 'flex';
+}
+
+function hideReportLoader() {
+    const loader = document.getElementById('reportLoader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+}
 
 // ============================================
 // UPDATE PROFILE
@@ -90,7 +125,7 @@ async function loadSummaryStatistics() {
         const data = response.data;
 
         document.getElementById('totalBookings').textContent = data.total_bookings;
-        document.getElementById('totalRevenue').textContent = '$' + data.total_revenue;
+        document.getElementById('totalRevenue').textContent = '₱' + data.total_revenue;
         document.getElementById('approvedBookings').textContent = data.approved_bookings;
         document.getElementById('pendingPayments').textContent = data.pending_payments;
     } catch (error) {
@@ -195,12 +230,24 @@ function renderChart(labels, data) {
 // BOOKINGS TABLE
 // ============================================
 
-async function loadBookingsTable() {
+async function loadBookingsTable(page = 1) {
     try {
-        const response = await axios.get('/api/bookings');
-        const bookings = response.data.data;
+        const response = await axios.get('/api/reports/bookings', {
+            params: { page: page }
+        });
+        
+        const bookings = response.data.data || [];
+        const pagination = response.data.pagination || {};
+
+        reportsState.bookings = {
+            data: bookings,
+            currentPage: pagination.current_page || page,
+            totalPages: pagination.last_page || 1,
+            perPage: pagination.per_page || 5
+        };
 
         renderBookingsTable(bookings);
+        updateBookingsPaginationControls();
     } catch (error) {
         console.error('Error loading bookings:', error);
     }
@@ -210,24 +257,150 @@ function renderBookingsTable(bookings) {
     const tbody = document.getElementById('bookingsTableBody');
 
     if (bookings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">No bookings found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">No bookings found</td></tr>';
         return;
     }
 
-    tbody.innerHTML = bookings.map(booking => `
-        <tr>
-            <td>${booking.id}</td>
-            <td>${booking.guest_name}</td>
-            <td>${booking.room_name}</td>
-            <td>${booking.check_in} - ${booking.check_out}</td>
-            <td>₱${booking.total_price}</td>
-            <td>
-                <span class="status-badge ${getStatusClass(booking.status)}">
-                    ${formatStatus(booking.status)}
-                </span>
-            </td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = bookings.map(booking => {
+        // Show Review Feedback button only for completed/checked_out bookings
+        let actionCell = '<td></td>'; // Empty by default
+        if (booking.status === 'checked_out') {
+            const reservationId = booking.reservation_id || booking.id.replace('PMS-', '');
+            actionCell = `<td><button class="btn-action btn-review-feedback" onclick="openFeedbackReviewModal(${reservationId}, '${booking.id}')"><i class="fas fa-comment-dots"></i> Review Feedback</button></td>`;
+        }
+
+        return `
+            <tr>
+                <td>${booking.id || booking.reference_no}</td>
+                <td>${booking.guest_name}</td>
+                <td>${booking.room_name || booking.room_type}</td>
+                <td>${booking.check_in || booking.check_in_raw} - ${booking.check_out || booking.check_out_raw}</td>
+                <td>₱${parseFloat(booking.total_price).toFixed(2)}</td>
+                <td>
+                    <span class="status-badge ${getStatusClass(booking.status)}">
+                        ${formatStatus(booking.status)}
+                    </span>
+                </td>
+                ${actionCell}
+            </tr>
+        `;
+    }).join('');
+}
+
+/**
+ * Update pagination controls for bookings
+ */
+function updateBookingsPaginationControls() {
+    const pageInfo = document.getElementById('bookingsPageInfo');
+    const prevBtn = document.getElementById('bookingsPrevBtn');
+    const nextBtn = document.getElementById('bookingsNextBtn');
+    const pagination = document.getElementById('bookingsPagination');
+    const pageNumbersContainer = document.getElementById('bookingsPageNumbers');
+
+    // Show pagination if there's data
+    if (reportsState.bookings.data.length > 0) {
+        if (pagination) {
+            pagination.style.display = 'flex';
+        }
+    } else {
+        if (pagination) {
+            pagination.style.display = 'none';
+        }
+        return;
+    }
+
+    if (pageInfo) {
+        pageInfo.textContent = `Page ${reportsState.bookings.currentPage} of ${reportsState.bookings.totalPages}`;
+    }
+
+    if (prevBtn) {
+        prevBtn.disabled = reportsState.bookings.currentPage <= 1;
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = reportsState.bookings.currentPage >= reportsState.bookings.totalPages;
+    }
+
+    // Generate page numbers - always show all pages even if <= 5
+    if (pageNumbersContainer) {
+        pageNumbersContainer.innerHTML = '';
+        const totalPages = reportsState.bookings.totalPages;
+        const currentPage = reportsState.bookings.currentPage;
+        const maxVisible = 5;
+
+        let pages = [];
+        if (totalPages <= maxVisible) {
+            // Show all pages if 5 or less
+            pages = Array.from({length: totalPages}, (_, i) => i + 1);
+        } else {
+            // For more than 5 pages, show smart ellipsis
+            pages.push(1);
+            
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+            
+            if (start > 2) {
+                pages.push('...');
+            }
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            if (end < totalPages - 1) {
+                pages.push('...');
+            }
+            
+            pages.push(totalPages);
+        }
+
+        pages.forEach(page => {
+            if (page === '...') {
+                const span = document.createElement('span');
+                span.className = 'page-ellipsis';
+                span.textContent = '...';
+                pageNumbersContainer.appendChild(span);
+            } else {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn';
+                btn.textContent = page;
+                
+                if (page === currentPage) {
+                    btn.classList.add('active');
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => goToBookingsPage(page);
+                }
+                
+                pageNumbersContainer.appendChild(btn);
+            }
+        });
+    }
+}
+
+/**
+ * Go to specific page for bookings
+ */
+function goToBookingsPage(page) {
+    loadBookingsTable(page);
+}
+
+/**
+ * Go to previous page for bookings
+ */
+function previousBookingsPage() {
+    if (reportsState.bookings.currentPage > 1) {
+        loadBookingsTable(reportsState.bookings.currentPage - 1);
+    }
+}
+
+/**
+ * Go to next page for bookings
+ */
+function nextBookingsPage() {
+    if (reportsState.bookings.currentPage < reportsState.bookings.totalPages) {
+        loadBookingsTable(reportsState.bookings.currentPage + 1);
+    }
 }
 
 // ============================================
@@ -362,7 +535,7 @@ async function exportToPDF() {
         pdf.save(`hotel-reports-${fromDate}-to-${toDate}.pdf`);
     } catch (error) {
         console.error('Error generating PDF:', error);
-        alert('Failed to generate PDF. Please try again.');
+        showModalAlert('Failed to generate PDF. Please try again.', 'error');
     }
 }
 
@@ -402,4 +575,138 @@ function getStatusClass(status) {
         'cancelled': 'rejected'
     };
     return classMap[status] || 'pending';
+}
+
+/**
+ * Feedback Review Modal Functions
+ */
+function openFeedbackReviewModal(reservationId, bookingId) {
+    // Create the modal
+    const modalHtml = `
+        <div class="modal-overlay" id="feedbackReviewModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Review Feedback</h3>
+                    <button class="modal-close-btn" onclick="closeFeedbackReviewModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="feedback-loader">
+                        <div class="spinner"></div>
+                        <p>Loading feedback...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove any existing modal
+    const existingModal = document.getElementById('feedbackReviewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Insert modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Add overlay click to close
+    const overlay = document.getElementById('feedbackReviewModal');
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeFeedbackReviewModal();
+        }
+    });
+
+    // Fetch feedback
+    fetchFeedback(reservationId, bookingId);
+}
+
+function closeFeedbackReviewModal() {
+    const modal = document.getElementById('feedbackReviewModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function fetchFeedback(reservationId, bookingId) {
+    try {
+        // Ensure reservation ID is numeric
+        const numericReservationId = parseInt(reservationId);
+        if (isNaN(numericReservationId)) {
+            throw new Error('Invalid reservation ID');
+        }
+
+        const url = `/api/bookings/${numericReservationId}/feedback`;
+        const response = await axios.get(url, {
+            timeout: 10000,
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        const feedbackData = response.data.data || [];
+        const bookingInfo = response.data.booking || {};
+
+        const modalBody = document.querySelector('#feedbackReviewModal .modal-body');
+        
+        if (!feedbackData || feedbackData.length === 0) {
+            modalBody.innerHTML = `
+                <div class="feedback-info">
+                    <p><strong>Booking:</strong> ${bookingId}</p>
+                    <p><strong>Guest:</strong> ${bookingInfo.guest_name || 'N/A'}</p>
+                    <p><strong>Room:</strong> ${bookingInfo.room_name || 'N/A'}</p>
+                </div>
+                <div class="no-feedback">
+                    <i class="fas fa-comment"></i>
+                    <p>No feedback submitted for this booking yet.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Display feedback
+        let feedbackHTML = `
+            <div class="feedback-info">
+                <p><strong>Booking:</strong> ${bookingId}</p>
+                <p><strong>Guest:</strong> ${bookingInfo.guest_name || 'N/A'}</p>
+                <p><strong>Room:</strong> ${bookingInfo.room_name || 'N/A'}</p>
+            </div>
+        `;
+
+        feedbackData.forEach(feedback => {
+            if (!feedback || !feedback.rating) return;
+            
+            const stars = '⭐'.repeat(parseInt(feedback.rating)) + '☆'.repeat(5 - parseInt(feedback.rating));
+            const submittedDate = feedback.created_at ? new Date(feedback.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }) : 'Unknown';
+
+            feedbackHTML += `
+                <div class="feedback-item">
+                    <div class="feedback-header">
+                        <div class="feedback-rating">${stars} ${feedback.rating}/5</div>
+                        <div class="feedback-date">${submittedDate}</div>
+                    </div>
+                    <div class="feedback-user"><strong>${feedback.user?.name || 'Anonymous'}</strong></div>
+                    <div class="feedback-comments">${feedback.comments && feedback.comments.trim() ? feedback.comments : '<em>No comments provided</em>'}</div>
+                </div>
+            `;
+        });
+
+        modalBody.innerHTML = feedbackHTML;
+    } catch (error) {
+        console.error('Error fetching feedback:', error);
+        const modalBody = document.querySelector('#feedbackReviewModal .modal-body');
+        let errorMsg = 'Error loading feedback. Please try again.';
+        if (error.response?.data?.message) {
+            errorMsg = error.response.data.message;
+        }
+        modalBody.innerHTML = `
+            <div class="feedback-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>${errorMsg}</p>
+            </div>
+        `;
+    }
 }

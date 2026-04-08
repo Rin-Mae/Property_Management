@@ -22,10 +22,30 @@ function setupEventListeners() {
     const searchInput = document.getElementById('searchInput');
     const typeFilter = document.getElementById('typeFilter');
     const statusFilter = document.getElementById('statusFilter');
+    const imageInput = document.getElementById('roomImage');
 
     if (searchInput) searchInput.addEventListener('input', filterRooms);
     if (typeFilter) typeFilter.addEventListener('change', filterRooms);
     if (statusFilter) statusFilter.addEventListener('change', filterRooms);
+    
+    // Image preview handler
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('imagePreview');
+                    const previewImg = document.getElementById('previewImg');
+                    if (preview && previewImg) {
+                        previewImg.src = event.target.result;
+                        preview.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 }
 
 // Load user information
@@ -81,6 +101,7 @@ function loadRooms() {
             console.error('Error loading rooms:', error);
             showAlert('Error loading rooms', 'error');
             document.getElementById('roomsLoading').style.display = 'none';
+            document.getElementById('roomsLoading').innerHTML = 'Error loading rooms';
         });
 }
 
@@ -170,8 +191,8 @@ function createRoomCard(room) {
     }
 
     card.innerHTML = `
-        <img src="${imageUrl}" alt="${room.name}" class="room-image" onerror="this.style.display='none'">
-        <div class="room-content">
+        <img src="${imageUrl}" alt="${room.name}" class="room-image" onerror="this.style.display='none'" style="cursor: pointer;" onclick="openViewRoomModal(${room.id})">
+        <div class="room-content" style="cursor: pointer;" onclick="openViewRoomModal(${room.id})">
             <div class="room-header">
                 <div>
                     <h3 class="room-name">${escapeHtml(room.name)}</h3>
@@ -193,12 +214,11 @@ function createRoomCard(room) {
             </div>
 
             <span class="room-status ${statusClass}">${statusIcon} ${room.status.charAt(0).toUpperCase() + room.status.slice(1)}</span>
-
-            <div class="room-actions">
-                <button class="btn btn-edit" onclick="openEditRoomModal(${room.id})"><i class="fas fa-edit"></i> Edit</button>
-                <button class="btn btn-status" onclick="openStatusModal(${room.id})"><i class="fas fa-sync-alt"></i> Status</button>
-                <button class="btn btn-delete" onclick="openDeleteModal(${room.id})"><i class="fas fa-trash-alt"></i> Delete</button>
-            </div>
+        </div>
+        <div class="room-actions">
+            <button class="btn btn-edit" onclick="openEditRoomModal(${room.id})"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-status" onclick="openStatusModal(${room.id})"><i class="fas fa-sync-alt"></i> Status</button>
+            <button class="btn btn-delete" onclick="openDeleteModal(${room.id})"><i class="fas fa-trash-alt"></i> Delete</button>
         </div>
     `;
 
@@ -207,14 +227,12 @@ function createRoomCard(room) {
 
 // Get placeholder image based on room type
 function getPlaceholderImage(typeName) {
-    // You can customize this based on room types
-    const placeholders = {
-        'standard': 'https://via.placeholder.com/400x200?text=Standard+Room',
-        'deluxe': 'https://via.placeholder.com/400x200?text=Deluxe+Room',
-        'suite': 'https://via.placeholder.com/400x200?text=Suite',
-        'luxury': 'https://via.placeholder.com/400x200?text=Luxury+Room',
-    };
-    return placeholders[typeName.toLowerCase()] || 'https://via.placeholder.com/400x200?text=Room';
+    // Return a simple SVG placeholder instead of external URL
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
+        <rect width="400" height="200" fill="#e8e1d6"/>
+        <text x="50%" y="50%" font-size="20" fill="#999" text-anchor="middle" dominant-baseline="middle">No Image</text>
+    </svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
 // Populate type filter dropdown
@@ -266,12 +284,17 @@ function openCreateRoomModal() {
     document.getElementById('roomForm').reset();
     document.getElementById('roomModalTitle').textContent = 'Create New Room';
     document.getElementById('submitBtn').textContent = 'Create Room';
-    document.getElementById('roomStatus').value = 'available';
 
     // Clear amenities checkboxes
     document.querySelectorAll('.amenity-checkbox input').forEach(checkbox => {
         checkbox.checked = false;
     });
+
+    // Clear image preview
+    const imageInput = document.getElementById('roomImage');
+    const imagePreview = document.getElementById('imagePreview');
+    if (imageInput) imageInput.value = '';
+    if (imagePreview) imagePreview.style.display = 'none';
 
     document.getElementById('roomModal').style.display = 'block';
 }
@@ -288,8 +311,6 @@ function openEditRoomModal(roomId) {
     document.getElementById('capacity').value = room.capacity;
     document.getElementById('price').value = room.price;
     document.getElementById('roomDescription').value = room.description || '';
-    document.getElementById('roomStatus').value = room.status;
-    document.getElementById('roomImageUrl').value = room.image_url || '';
 
     // Set amenities
     document.querySelectorAll('.amenity-checkbox input').forEach(checkbox => {
@@ -303,6 +324,20 @@ function openEditRoomModal(roomId) {
         });
     }
 
+    // Show existing image or clear preview
+    const imageInput = document.getElementById('roomImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (imageInput) imageInput.value = '';
+    
+    if (room.image_url && previewImg) {
+        previewImg.src = room.image_url;
+        if (imagePreview) imagePreview.style.display = 'block';
+    } else if (imagePreview) {
+        imagePreview.style.display = 'none';
+    }
+
     document.getElementById('roomModalTitle').textContent = 'Edit Room';
     document.getElementById('submitBtn').textContent = 'Update Room';
     document.getElementById('roomModal').style.display = 'block';
@@ -313,6 +348,12 @@ function closeRoomModal() {
     document.getElementById('roomModal').style.display = 'none';
     document.getElementById('roomForm').reset();
     clearErrors();
+    
+    // Clear image preview
+    const imageInput = document.getElementById('roomImage');
+    const imagePreview = document.getElementById('imagePreview');
+    if (imageInput) imageInput.value = '';
+    if (imagePreview) imagePreview.style.display = 'none';
 }
 
 // Handle room form submit
@@ -320,39 +361,78 @@ function handleRoomSubmit(event) {
     event.preventDefault();
     clearErrors();
 
+    // Show loader
+    showModalLoader();
+
     const roomId = document.getElementById('roomId').value;
-    const formData = new FormData(document.getElementById('roomForm'));
+    const formElement = document.getElementById('roomForm');
+    const formData = new FormData();
 
     // Get selected amenities
     const amenityIds = Array.from(document.querySelectorAll('.amenity-checkbox input:checked'))
         .map(checkbox => checkbox.value);
 
-    const data = {
-        name: formData.get('name'),
-        room_number: formData.get('room_number'),
-        type_id: formData.get('type_id'),
-        capacity: formData.get('capacity'),
-        price: formData.get('price'),
-        description: formData.get('description'),
-        status: formData.get('status'),
-        image_url: formData.get('image_url'),
-        amenities: amenityIds,
-    };
+    // Add form fields to FormData
+    const name = document.getElementById('roomName').value;
+    const room_number = document.getElementById('roomNumber').value;
+    const type_id = document.getElementById('roomType').value;
+    const capacity = document.getElementById('capacity').value;
+    const price = document.getElementById('price').value;
+    const description = document.getElementById('roomDescription').value;
+
+    // Debug log
+    console.log('Form Data:', { name, room_number, type_id, capacity, price, description, amenityIds });
+
+    formData.append('name', name);
+    formData.append('room_number', room_number);
+    formData.append('type_id', type_id);
+    formData.append('capacity', capacity);
+    formData.append('price', price);
+    formData.append('description', description);
+    formData.append('status', 'available');
+    
+    // Append amenities as array
+    amenityIds.forEach(id => {
+        formData.append('amenities[]', id);
+    });
+
+    // Add image file if selected
+    const imageInput = document.getElementById('roomImage');
+    if (imageInput && imageInput.files[0]) {
+        formData.append('image', imageInput.files[0]);
+    }
 
     const url = roomId ? `/api/rooms/${roomId}` : '/api/rooms';
     const method = roomId ? 'PUT' : 'POST';
 
+    // For PUT requests with FormData, use POST with _method override
+    if (roomId) {
+        formData.append('_method', 'PUT');
+    }
+
+    // Debug: Log FormData contents
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value instanceof File ? `File(${value.name})` : value);
+    }
+    console.log('Sending to:', url, 'with method:', method);
+
     fetch(url, {
-        method: method,
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
         },
-        body: JSON.stringify(data),
+        body: formData,
     })
         .then(response => {
             if (response.status === 422) {
+                hideModalLoader();
                 return response.json().then(data => {
+                    console.error('Validation errors:', data.errors);
+                    // Log detailed error messages
+                    Object.keys(data.errors).forEach(field => {
+                        console.error(`${field}:`, data.errors[field]);
+                    });
                     displayErrors(data.errors);
                     throw new Error('Validation failed');
                 });
@@ -360,11 +440,13 @@ function handleRoomSubmit(event) {
             return response.json();
         })
         .then(data => {
+            hideModalLoader();
             closeRoomModal();
             loadRooms();
             showAlert(data.message || (roomId ? 'Room updated successfully' : 'Room created successfully'), 'success');
         })
         .catch(error => {
+            hideModalLoader();
             if (error.message !== 'Validation failed') {
                 console.error('Error:', error);
                 showAlert('Error saving room', 'error');
@@ -388,6 +470,9 @@ function closeDeleteModal() {
 function confirmDelete() {
     if (!deleteRoomId) return;
 
+    // Show loader
+    showModalLoader();
+
     fetch(`/api/rooms/${deleteRoomId}`, {
         method: 'DELETE',
         headers: {
@@ -396,11 +481,13 @@ function confirmDelete() {
     })
         .then(response => response.json())
         .then(data => {
+            hideModalLoader();
             closeDeleteModal();
             loadRooms();
             showAlert(data.message || 'Room deleted successfully', 'success');
         })
         .catch(error => {
+            hideModalLoader();
             console.error('Error:', error);
             showAlert('Error deleting room', 'error');
         });
@@ -426,6 +513,9 @@ function closeStatusModal() {
 function confirmStatusUpdate() {
     if (!statusRoomId) return;
 
+    // Show loader
+    showModalLoader();
+
     const newStatus = document.getElementById('newStatus').value;
 
     fetch(`/api/rooms/${statusRoomId}/status`, {
@@ -438,11 +528,13 @@ function confirmStatusUpdate() {
     })
         .then(response => response.json())
         .then(data => {
+            hideModalLoader();
             closeStatusModal();
             loadRooms();
             showAlert(data.message || 'Room status updated successfully', 'success');
         })
         .catch(error => {
+            hideModalLoader();
             console.error('Error:', error);
             showAlert('Error updating room status', 'error');
         });
@@ -468,8 +560,20 @@ function nextRoomsPage() {
 
 // Display errors
 function displayErrors(errors) {
+    // Map field names to error element IDs
+    const fieldMapping = {
+        'name': 'roomNameError',
+        'room_number': 'roomNumberError',
+        'type_id': 'roomTypeError',
+        'capacity': 'capacityError',
+        'price': 'priceError',
+        'description': 'roomDescriptionError',
+        'status': 'roomStatusError'
+    };
+
     Object.keys(errors).forEach(field => {
-        const errorElement = document.getElementById(`${field}Error`);
+        const errorElementId = fieldMapping[field] || `${field}Error`;
+        const errorElement = document.getElementById(errorElementId);
         if (errorElement) {
             errorElement.textContent = errors[field][0];
         }
@@ -523,18 +627,22 @@ function escapeHtml(unsafe) {
 
 // Handle logout
 function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-        fetch('/logout', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            },
-        })
-            .then(() => {
+    showModalConfirm('Are you sure you want to logout?', async () => {
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]').content;
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                },
+            });
+            if (response.ok) {
                 window.location.href = '/';
-            })
-            .catch(error => console.error('Error:', error));
-    }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
 }
 
 // Close modals on background click
@@ -542,6 +650,7 @@ window.onclick = function (event) {
     const roomModal = document.getElementById('roomModal');
     const deleteModal = document.getElementById('deleteModal');
     const statusModal = document.getElementById('statusModal');
+    const viewRoomModal = document.getElementById('viewRoomModal');
 
     if (event.target === roomModal) {
         closeRoomModal();
@@ -552,4 +661,105 @@ window.onclick = function (event) {
     if (event.target === statusModal) {
         closeStatusModal();
     }
+    if (event.target === viewRoomModal) {
+        closeViewRoomModal();
+    }
 };
+
+// Open view room modal
+function openViewRoomModal(roomId) {
+    const room = allRooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    const typeName = room.type ? room.type.name : 'Unknown';
+    
+    document.getElementById('viewRoomName').textContent = room.name;
+    document.getElementById('viewRoomNumber').textContent = room.room_number;
+    document.getElementById('viewRoomType').textContent = typeName;
+    document.getElementById('viewRoomCapacity').textContent = `${room.capacity} guest${room.capacity > 1 ? 's' : ''}`;
+    document.getElementById('viewRoomPrice').textContent = `₱${parseFloat(room.price).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    document.getElementById('viewRoomDescription').textContent = room.description || 'No description available';
+    
+    // Set status badge
+    const statusEl = document.getElementById('viewRoomStatus');
+    const statusClass = room.status.toLowerCase();
+    let statusIcon = '';
+    switch (statusClass) {
+        case 'available':
+            statusIcon = '<i class="fas fa-check-circle"></i> ';
+            statusEl.style.background = 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)';
+            statusEl.style.color = '#2e7d32';
+            break;
+        case 'occupied':
+            statusIcon = '<i class="fas fa-door-open"></i> ';
+            statusEl.style.background = 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)';
+            statusEl.style.color = '#e65100';
+            break;
+        case 'maintenance':
+            statusIcon = '<i class="fas fa-wrench"></i> ';
+            statusEl.style.background = 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)';
+            statusEl.style.color = '#6a1b9a';
+            break;
+    }
+    statusEl.innerHTML = statusIcon + (room.status.charAt(0).toUpperCase() + room.status.slice(1));
+    
+    // Set amenities
+    const amenitiesEl = document.getElementById('viewRoomAmenities');
+    amenitiesEl.innerHTML = '';
+    if (room.amenities && room.amenities.length > 0) {
+        room.amenities.forEach(amenity => {
+            const amenityTag = document.createElement('div');
+            amenityTag.style.padding = '8px 12px';
+            amenityTag.style.background = '#f0f0f0';
+            amenityTag.style.borderRadius = '6px';
+            amenityTag.style.fontSize = '13px';
+            amenityTag.style.fontWeight = '500';
+            amenityTag.style.color = '#333';
+            amenityTag.textContent = amenity.name;
+            amenitiesEl.appendChild(amenityTag);
+        });
+    } else {
+        const noAmenities = document.createElement('p');
+        noAmenities.style.color = '#999';
+        noAmenities.style.fontSize = '13px';
+        noAmenities.textContent = 'No amenities available';
+        amenitiesEl.appendChild(noAmenities);
+    }
+    
+    document.getElementById('viewRoomModal').style.display = 'block';
+}
+
+// Close view room modal
+function closeViewRoomModal() {
+    document.getElementById('viewRoomModal').style.display = 'none';
+}
+
+// ============================================
+// LOADER FUNCTIONS
+// ============================================
+
+function showModalLoader() {
+    // Create loader HTML if it doesn't exist
+    let loader = document.getElementById('modalLoader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'modalLoader';
+        loader.className = 'modal-loader-overlay';
+        document.body.appendChild(loader);
+    }
+    
+    loader.innerHTML = `
+        <div class="modal-loader-content">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    `;
+    loader.style.display = 'flex';
+}
+
+function hideModalLoader() {
+    const loader = document.getElementById('modalLoader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+}

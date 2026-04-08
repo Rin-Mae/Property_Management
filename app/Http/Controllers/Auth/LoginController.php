@@ -57,8 +57,8 @@ class LoginController extends Controller
             ]);
         }
 
-        // Redirect to landing page
-        return redirect()->route('landing')->with('success', 'Login successful');
+        // Redirect to dashboard
+        return redirect()->route('dashboard')->with('success', 'Login successful');
     }
 
     /**

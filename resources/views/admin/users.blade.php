@@ -14,44 +14,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link active">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -65,30 +60,32 @@
                 <!-- Page Header -->
                 <div class="page-header">
                     <h1>User Management</h1>
-                    <button class="btn btn-primary" onclick="openCreateUserModal()">+ Create New User</button>
                 </div>
 
                 <!-- Alerts -->
                 <div id="alertContainer"></div>
 
-                <!-- Users Table -->
+                <!-- Combined Users & Clients Card -->
                 <div class="dashboard-card">
-                    <h3>All Users</h3>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>All Users</h3>
+                        <button class="btn btn-primary" onclick="openCreateUserModal()">+ Create New User</button>
+                    </div>
 
                     <!-- Search and Filter -->
-                    <div class="search-filter-section">
+                    <div class="search-filter-section" style="display: flex; gap: 15px; margin-bottom: 20px;">
                         <input type="text" id="searchInput" placeholder="Search by name or email..."
-                            class="search-input">
-                        <select id="roleFilter" class="role-filter">
+                            class="search-input" style="flex: 1;">
+                        <select id="roleFilter" class="role-filter" style="min-width: 150px;">
                             <option value="">All Roles</option>
                             <option value="admin">Admin</option>
-                            <option value="housekeeper">Housekeeper</option>
-                            <option value="user">User</option>
+                            <option value="client">Client</option>
                         </select>
                     </div>
 
-                    <div id="usersLoading" class="loading">Loading users...</div>
-                    <div id="usersContainer" style="display: none;">
+                    <div id="combinedLoading" class="loading">Loading users...</div>
+                    <div id="combinedContainer" style="display: none;">
                         <div class="users-table-wrapper">
                             <table class="users-table">
                                 <thead>
@@ -101,17 +98,18 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="usersTableBody">
+                                <tbody id="combinedTableBody">
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Pagination -->
-                        <div id="usersPagination" class="pagination-controls" style="display: none;">
-                            <button id="usersPrevBtn" onclick="previousUsersPage()" class="pagination-btn">←
+                        <div id="combinedPagination" class="pagination-controls" style="display: none;">
+                            <button id="combinedPrevBtn" onclick="previousUsersPage()" class="pagination-btn">←
                                 Previous</button>
-                            <span id="usersPageInfo" class="pagination-info">Page 1 of 1</span>
-                            <button id="usersNextBtn" onclick="nextUsersPage()" class="pagination-btn">Next →</button>
+                            <span id="combinedPageInfo" class="pagination-info">Page 1 of 1</span>
+                            <button id="combinedNextBtn" onclick="nextUsersPage()" class="pagination-btn">Next
+                                →</button>
                         </div>
                     </div>
                 </div>
@@ -170,10 +168,10 @@
                         <div class="form-group">
                             <label for="role">Role *</label>
                             <select id="role" name="role" required>
-                                <option value="">Select a role</option>
                                 <option value="admin">Admin</option>
-                                <option value="housekeeper">Housekeeper</option>
+                                <option value="client">Client</option>
                             </select>
+                            <input type="hidden" id="roleHidden" name="role">
                             <div class="error-message" id="roleError"></div>
                         </div>
                     </div>
@@ -228,6 +226,13 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/admin-common.js') }}"></script>
     <script src="{{ asset('js/admin-users.js') }}"></script>
+
+    <script>
+        // Load initial users data
+        document.addEventListener('DOMContentLoaded', fu nction() {
+            loadUsers();
+        });
+    </script>
 </body>
 
 </html>

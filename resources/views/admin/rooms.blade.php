@@ -15,49 +15,39 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1 id="profileName">Admin</h1>
+            <h1 id="profileName">{{ Auth::user()->name ?? 'Admin' }}</h1>
             <p class="user-info" id="userInfo"></p>
         </div>
 
         <ul class="sidebar-menu">
             <li>
                 <a href="/dashboard" class="sidebar-link">
+                    <i class="fas fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/rooms" class="sidebar-link active">
+                    <i class="fas fa-door-open"></i>
                     <span>Rooms</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/bookings" class="sidebar-link">
+                    <i class="fas fa-calendar-check"></i>
                     <span>Bookings</span>
                 </a>
             </li>
             <li>
-                <a href="/admin/payments" class="sidebar-link">
-                    <span>Payments</span>
-                </a>
-            </li>
-            <li>
                 <a href="/admin/reports" class="sidebar-link">
+                    <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li>
                 <a href="/admin/users" class="sidebar-link">
+                    <i class="fas fa-users"></i>
                     <span>Users</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/clients" class="sidebar-link">
-                    <span>Clients</span>
                 </a>
             </li>
         </ul>
@@ -167,24 +157,23 @@
                                 required>
                             <div class="error-message" id="priceError"></div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="roomStatus">Status *</label>
-                            <select id="roomStatus" name="status" required>
-                                <option value="available">Available</option>
-                                <option value="occupied">Occupied</option>
-                                <option value="maintenance">Maintenance</option>
-                            </select>
-                            <div class="error-message" id="roomStatusError"></div>
-                        </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group full-width">
-                            <label for="roomImageUrl">Image URL</label>
-                            <input type="url" id="roomImageUrl" name="image_url"
-                                placeholder="https://example.com/image.jpg">
-                            <div class="error-message" id="roomImageUrlError"></div>
+                            <label for="roomImage">Room Image</label>
+                            <div class="image-upload-wrapper">
+                                <input type="file" id="roomImage" name="image" accept="image/*" class="image-input">
+                                <label for="roomImage" class="image-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Click to upload or drag image (Max 25MB)</span>
+                                </label>
+                                <div id="imagePreview" class="image-preview" style="display: none;">
+                                    <img id="previewImg" src="" alt="Preview"
+                                        style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                                </div>
+                            </div>
+                            <div class="error-message" id="roomImageError"></div>
                         </div>
                     </div>
 
@@ -258,6 +247,76 @@
         </div>
     </div>
 
+    <!-- View Room Modal -->
+    <div id="viewRoomModal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2>Room Details</h2>
+                <button class="close-btn" onclick="closeViewRoomModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="room-details-container">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div>
+                            <h3 style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 8px;">
+                                Room Name</h3>
+                            <p id="viewRoomName" style="font-size: 18px; font-weight: 600; color: #333;"></p>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 8px;">
+                                Room Number</h3>
+                            <p id="viewRoomNumber" style="font-size: 18px; font-weight: 600; color: #333;"></p>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 8px;">
+                                Room Type</h3>
+                            <p id="viewRoomType" style="font-size: 18px; font-weight: 600; color: #333;"></p>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 8px;">
+                                Capacity</h3>
+                            <p id="viewRoomCapacity" style="font-size: 18px; font-weight: 600; color: #333;"></p>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 8px;">
+                                Price</h3>
+                            <p id="viewRoomPrice" style="font-size: 18px; font-weight: 600; color: #333;"></p>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 8px;">
+                                Status</h3>
+                            <p id="viewRoomStatus"
+                                style="font-size: 14px; font-weight: 600; display: inline-block; padding: 6px 12px; border-radius: 20px;">
+                            </p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 24px;">
+                        <h3
+                            style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #f0f0f0;">
+                            Description</h3>
+                        <p id="viewRoomDescription" style="font-size: 14px; color: #555; line-height: 1.6;"></p>
+                    </div>
+                    <div>
+                        <h3
+                            style="font-size: 14px; color: #999; text-transform: uppercase; margin-bottom: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #f0f0f0;">
+                            Amenities</h3>
+                        <div id="viewRoomAmenities"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeViewRoomModal()"><i
+                        class="fas fa-times"></i> Close</button>
+                <button type="button" class="btn btn-primary" onclick="openCreateRoomModal()"><i
+                        class="fas fa-plus-circle"></i> Add Rooms</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{{ asset('js/admin-common.js') }}"></script>
     <script src="{{ asset('js/admin-rooms.js') }}"></script>
 </body>
 

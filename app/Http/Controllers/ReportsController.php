@@ -4,28 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class ReportsController extends Controller
 {
     /**
+     * Get general reports data
+     */
+    public function index()
+    {
+        return response()->json([
+            'message' => 'Reports API',
+            'endpoints' => [
+                '/api/reports/summary' => 'Get dashboard summary statistics',
+                '/api/reports/booking-history' => 'Get booking history with pagination',
+                '/api/reports/payment-history' => 'Get payment history with pagination',
+            ]
+        ]);
+    }
+
+    /**
      * Get summary statistics for the dashboard
      */
     public function getSummary()
     {
-        // Total bookings (all time)
-        $totalBookings = Reservation::count();
+        $user = Auth::user();
+        $query = new Reservation();
         
-        // Total revenue (all confirmed, checked_in, checked_out reservations)
-        $totalRevenue = Reservation::whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
+        // Filter by user if not admin
+        if ($user && $user->role !== 'admin') {
+            $baseQuery = Reservation::where('user_id', $user->id);
+        } else {
+            $baseQuery = Reservation::query();
+        }
+        
+        // Total bookings (all reservations)
+        $totalBookings = $baseQuery->count();
+        
+        // Total revenue (sum of total_price for confirmed, checked_in, or checked_out reservations)
+        $totalRevenue = $baseQuery->clone()
+            ->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
             ->sum('total_price');
         
-        // Approved bookings (confirmed, checked_in, checked_out)
-        $approvedBookings = Reservation::whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
+        // Approved bookings (confirmed, checked_in, or checked_out)
+        $approvedBookings = $baseQuery->clone()
+            ->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
             ->count();
         
-        // Pending payments (pending status)
-        $pendingPayments = Reservation::where('status', 'pending')
+        // Pending payments (reservations with status pending and no payment_date)
+        $pendingPayments = $baseQuery->clone()
+            ->where('status', 'pending')
+            ->whereNull('payment_date')
             ->count();
 
         return response()->json([
@@ -48,6 +78,12 @@ class ReportsController extends Controller
 
         $query = Reservation::with('guest', 'room')
             ->orderBy('created_at', 'desc');
+        
+        // Filter by user if not admin
+        $user = Auth::user();
+        if ($user && $user->role !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
 
         // Filter by status
         if ($status !== 'all') {
@@ -68,6 +104,8 @@ class ReportsController extends Controller
             return [
                 'id' => 'PMS-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT),
                 'reservation_id' => $reservation->id,
+                'guest_name' => $reservation->guest->name ?? 'N/A',
+                'room_name' => $reservation->room->name ?? 'N/A',
                 'room_type' => $reservation->room->type->name ?? 'N/A',
                 'check_in' => $reservation->check_in->format('M d, Y'),
                 'check_out' => $reservation->check_out->format('M d, Y'),
@@ -103,6 +141,12 @@ class ReportsController extends Controller
         $query = Reservation::with('guest', 'room')
             ->whereIn('status', ['confirmed', 'checked_in', 'checked_out', 'cancelled'])
             ->orderBy('created_at', 'desc');
+        
+        // Filter by user if not admin
+        $user = Auth::user();
+        if ($user && $user->role !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
 
         // Filter by payment status
         if ($status !== 'all') {
@@ -220,5 +264,129 @@ class ReportsController extends Controller
         return response()->json([
             'months' => $months,
         ]);
+    }
+
+    /**
+     * Get user-specific reports (bookings and payments)
+     */
+    public function getUserReports(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $bookingPage = $request->get('bookingPage', 1);
+            $paymentPage = $request->get('paymentPage', 1);
+            $perPage = 5;
+            
+            // Get user's bookings with pagination
+            $bookingsQuery = Reservation::with('room.type')
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc');
+            
+            $allBookingsForStats = $bookingsQuery->get();
+            $bookingsPaginated = $bookingsQuery->paginate($perPage, ['*'], 'page', $bookingPage);
+            
+            // Get user's payments (all reservations they've made) with pagination
+            $paymentsQuery = Reservation::with('room')
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['confirmed', 'checked_in', 'checked_out', 'pending', 'cancelled'])
+                ->orderBy('created_at', 'desc');
+            
+            $paymentsPaginated = $paymentsQuery->paginate($perPage, ['*'], 'page', $paymentPage);
+            
+            // Calculate statistics from all data
+            $totalBookings = $allBookingsForStats->count();
+            $confirmedBookings = $allBookingsForStats->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])->count();
+            $cancelledBookings = $allBookingsForStats->whereIn('status', ['cancelled', 'rejected'])->count();
+            $totalPayments = $allBookingsForStats->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])->sum('total_price') ?? 0;
+            
+            // Format booking data with proper null checks
+            $formattedBookings = $bookingsPaginated->map(function ($reservation) {
+                $roomType = 'N/A';
+                if ($reservation->room && $reservation->room->type) {
+                    $roomType = $reservation->room->type->name;
+                }
+                
+                $checkIn = 'N/A';
+                $checkOut = 'N/A';
+                
+                if ($reservation->check_in) {
+                    $checkIn = $reservation->check_in instanceof \DateTime 
+                        ? $reservation->check_in->format('M d, Y')
+                        : \Carbon\Carbon::parse($reservation->check_in)->format('M d, Y');
+                }
+                
+                if ($reservation->check_out) {
+                    $checkOut = $reservation->check_out instanceof \DateTime 
+                        ? $reservation->check_out->format('M d, Y')
+                        : \Carbon\Carbon::parse($reservation->check_out)->format('M d, Y');
+                }
+                
+                return [
+                    'id' => 'PMS-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT),
+                    'reference_no' => 'PMS-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT),
+                    'room_type' => $roomType,
+                    'check_in' => $checkIn,
+                    'check_out' => $checkOut,
+                    'status' => ucfirst($reservation->status),
+                    'created_at' => $reservation->created_at ? $reservation->created_at->format('M d, Y') : 'N/A',
+                ];
+            })->values();
+            
+            // Format payment data with proper null checks
+            $formattedPayments = $paymentsPaginated->map(function ($reservation) {
+                $paymentStatus = 'Pending';
+                if (in_array($reservation->status, ['confirmed', 'checked_in', 'checked_out'])) {
+                    $paymentStatus = 'Paid';
+                } elseif (in_array($reservation->status, ['cancelled', 'rejected'])) {
+                    $paymentStatus = 'Rejected';
+                }
+                
+                $roomName = $reservation->room ? $reservation->room->name : 'N/A';
+                $amount = $reservation->total_price ? number_format($reservation->total_price, 2) : '0.00';
+                
+                return [
+                    'id' => 'PMS-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT),
+                    'reference_no' => 'PMS-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT),
+                    'room_name' => $roomName,
+                    'amount' => $amount,
+                    'payment_date' => $reservation->created_at ? $reservation->created_at->format('M d, Y') : 'N/A',
+                    'status' => $paymentStatus,
+                    'created_at' => $reservation->created_at ? $reservation->created_at->format('M d, Y') : 'N/A',
+                ];
+            })->values();
+            
+            return response()->json([
+                'stats' => [
+                    'totalBookings' => $totalBookings,
+                    'totalPayments' => $totalPayments,
+                    'confirmedBookings' => $confirmedBookings,
+                    'cancelledBookings' => $cancelledBookings,
+                ],
+                'bookings' => $formattedBookings,
+                'bookingsPagination' => [
+                    'current_page' => $bookingsPaginated->currentPage(),
+                    'per_page' => $bookingsPaginated->perPage(),
+                    'total' => $bookingsPaginated->total(),
+                    'last_page' => $bookingsPaginated->lastPage(),
+                ],
+                'payments' => $formattedPayments,
+                'paymentsPagination' => [
+                    'current_page' => $paymentsPaginated->currentPage(),
+                    'per_page' => $paymentsPaginated->perPage(),
+                    'total' => $paymentsPaginated->total(),
+                    'last_page' => $paymentsPaginated->lastPage(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error loading report data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
